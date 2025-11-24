@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dartball Score Sheet</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; background: #f9f9f9; line-height: 1.5; }
+        h1 { text-align: center; margin-bottom: 8px; color: #1a5276; }
+        h2 { text-align: center; margin: 25px 0 12px; font-size: 1.4em; color: #2874a6; }
+        .team-name { text-align: center; font-size: 2em; font-weight: bold; margin: 20px 0; color: #1a5276; }
+        .links { text-align: center; margin: 10px 0; }
+        .links a { color: #007bff; text-decoration: none; margin: 0 12px; font-weight: bold; }
+        .links a:hover { text-decoration: underline; }
+        .controls { text-align: center; margin: 20px 0; padding: 18px; background: #f0f0f0; border-radius: 8px; display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; align-items: center; }
+        .control-group { display: flex; flex-direction: column; align-items: center; }
+        .control-group label { font-weight: bold; margin-bottom: 8px; }
+        select, button { padding: 10px 20px; font-size: 16px; border-radius: 6px; }
+        button { background: #1a5276; color: white; border: none; cursor: pointer; }
+        button:hover { background: #154360; }
+        table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #333; padding: 9px; text-align: center; }
+        th { background: #2874a6; color: white; font-weight: bold; }
+        .player-name { text-align: left !important; padding-left: 14px !important; font-weight: bold; background: #f0f8ff; }
+        .avg { font-weight: bold; color: #d35400; }
+        .action-btns { text-align: center; margin: 30px 0; }
+        .action-btns button { padding: 14px 32px; font-size: 17px; margin: 0 12px; background: #1a5276; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .action-btns button:hover { background: #154360; }
+        .action-btns .clear-btn { background: #c0392b; }
+        .action-btns .clear-btn:hover { background: #a93226; }
+        @media print {
+            body { background: white; margin: 10px; }
+            .action-btns, .controls, .links { display: none !important; }
+            table { font-size: 11px; }
+        }
+        /* ——— MOBILE PERFECTION FOR SCORE SHEET ——— */
+@media (max-width: 840px) {
+    body { margin: 12px; padding: 8px; }
+    h1 { font-size: 1.7rem; }
+    h2 { font-size: 1.3rem; margin: 20px 0 10px; }
+    .team-name { font-size: 1.8rem; }
+
+    .controls {
+        flex-direction: column;
+        gap: 14px;
+        padding: 16px;
+    }
+    .control-group { width: 100%; }
+    select, button { width: 100%; font-size: 1.1rem; padding: 14px; }
+
+    table { font-size: 0.82rem; }
+    th, td { padding: 6px 4px; }
+    .player-name { font-size: 0.9rem; padding-left: 8px !important; }
+
+    .action-btns button {
+        width: 100%;
+        max-width: 300px;
+        padding: 16px !important;
+        font-size: 1.2rem !important;
+        margin: 8px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    table { font-size: 0.74rem; }
+    th, td { padding: 5px 3px; }
+    .player-name { font-size: 0.85rem; }
+}
+    </style>
+</head>
+<body>
+    <h1>Dartball Score Sheet</h1>
+    <div class="links">
+        <a href="dartball_game_tracker.html">Back to Game Tracker</a> |
+        <a href="dartball_plays_tracker.html">Plays Tracker</a> |
+        <a href="player_stats.html">Player Stats</a>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>View:</label>
+            <select id="teamSelect" onchange="refreshScores()">
+                <option value="A">Team A</option>
+                <option value="B">Team B</option>
+                <option value="both">Both Teams</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Sort:</label>
+            <select id="sortOrder" onchange="refreshScores()">
+                <option value="lineup">Lineup Order</option>
+                <option value="alpha">Alphabetical</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <button onclick="refreshScores()">Refresh</button>
+        </div>
+        <div class="control-group">
+            <label><input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()"> Auto-Refresh (10s)</label>
+        </div>
+    </div>
+
+    <div class="team-name" id="team-name">Team A</div>
+
+    <div class="action-btns">
+        <button onclick="window.print()">Print Score Sheet</button>
+        <button class="clear-btn" onclick="clearAllData()">Clear All Data</button>
+    </div>
+
+    <h2>Game 1 – Batting</h2><table id="g1-bat"></table>
+    <h2>Game 1 – Defense</h2><table id="g1-def"></table>
+    <h2>Game 2 – Batting</h2><table id="g2-bat"></table>
+    <h2>Game 2 – Defense</h2><table id="g2-def"></table>
+    <h2>Combined – Batting</h2><table id="comb-bat"></table>
+    <h2>Combined – Defense</h2><table id="comb-def"></table>
+
+    <script>
+        let autoInterval = null;
+
+        function getPlays(game) {
+            const key = game === 1 ? 'dartball_game1_plays' : 'dartball_game2_plays';
+            try { return JSON.parse(localStorage.getItem(key) || '[]'); }
+            catch { return []; }
+        }
+
+        function getLineup() {
+            try {
+                const raw = localStorage.getItem('current_game_lineup') || localStorage.getItem('current_lineup') || '{}';
+                const l = JSON.parse(raw);
+                const normalize = arr => (arr || []).map(p => {
+                    if (typeof p === 'object') return `${p.first||''} ${p.last||''}`.trim();
+                    return String(p).trim();
+                }).filter(Boolean);
+                return { A: normalize(l.teamA || l.team_a), B: normalize(l.teamB || l.team_b) };
+            } catch { return { A: [], B: [] }; }
+        }
+
+        function calcAvg(n, d) { return d > 0 ? (n/d).toFixed(3) : '—'; }
+
+        function refreshScores() {
+            const view = document.getElementById('teamSelect').value;
+            const sortMode = document.getElementById('sortOrder').value;
+            const lineup = getLineup();
+
+            let rosterA = lineup.A.slice();
+            let rosterB = lineup.B.slice();
+            let roster = view === 'A' ? rosterA :
+                         view === 'B' ? rosterB :
+                         [...rosterA, ...rosterB];
+
+            document.getElementById('team-name').textContent = 
+                view === 'both' ? 'Both Teams' : `Team ${view}`;
+
+            if (roster.length === 0) {
+                document.querySelectorAll('table').forEach(t => 
+                    t.innerHTML = '<tr><td colspan="12">No lineup loaded.</td></tr>');
+                return;
+            }
+
+            if (sortMode === 'alpha') {
+                roster.sort((a, b) => a.localeCompare(b));
+            }
+
+            const stats = { g1: {}, g2: {}, comb: {} };
+            ['g1','g2','comb'].forEach(k => 
+                roster.forEach(n => stats[k][n] = {
+                    gp: 0,
+                    bat: { AB:0, H:0, '1B':0, '2B':0, '3B':0, HR:0, RUNS:0, RBI:0, TB:0 },
+                    def: { Att:0, Succ:0, SPO:0, DPO:0, E:0 }
+                })
+            );
+
+            getPlays(1).forEach(p => processPlay(p, stats.g1, roster, view));
+            getPlays(2).forEach(p => processPlay(p, stats.g2, roster, view));
+
+            // Combine
+            roster.forEach(name => {
+                const c = stats.comb[name];
+                const g1 = stats.g1[name];
+                const g2 = stats.g2[name];
+                c.gp = (g1.gp||0) + (g2.gp||0);
+                Object.keys(c.bat).forEach(k => c.bat[k] = (g1.bat[k]||0) + (g2.bat[k]||0));
+                Object.keys(c.def).forEach(k => c.def[k] = (g1.def[k]||0) + (g2.def[k]||0));
+            });
+
+            render('g1-bat', stats.g1, true, roster);
+            render('g1-def', stats.g1, false, roster);
+            render('g2-bat', stats.g2, true, roster);
+            render('g2-def', stats.g2, false, roster);
+            render('comb-bat', stats.comb, true, roster);
+            render('comb-def', stats.comb, false, roster);
+        }
+
+        function processPlay(p, gameStats, roster, view) {
+            const batterName = (p.player && (p.player.name || p.player)) || '';
+            const defenderName = p.defender ? (p.defender && (p.defender.name || p.defender)) : null;
+            const battingTeam = p.team || 'A';
+
+            const isOurTeamBatting = view === 'both' || view === battingTeam;
+            const isOurTeamDefending = view === 'both' || view !== battingTeam;
+
+            // === BATTING STATS ===
+            if (isOurTeamBatting && roster.includes(batterName)) {
+                const s = gameStats[batterName];
+                s.gp = 1;
+                const b = s.bat;
+
+                const isHit = p.hit === true || ['1','2','3','4','5'].includes(p.playType);
+                const isOut = ['O','SKO','SPO','DPO'].includes(p.defenderPlayType || p.playType || '');
+
+                if (isHit || isOut || p.playType === 'BB') {
+                    b.AB++;
+                }
+
+                if (isHit) {
+                    b.H++;
+
+                    if (p.playType === 'BB' || p.playType === '1') b['1B']++;
+                    if (p.playType === '2' || p.playType === '5') b['2B']++;
+                    if (p.playType === '3') b['3B']++;
+                    if (p.playType === '4') b.HR++;
+
+                    if (p.rbi !== undefined) b.RBI += p.rbi;
+                }
+
+                // TOTAL BASES (SLUGGER)
+                if (isHit) {
+                    let bases = 0;
+                    if (p.playType === 'BB' || p.playType === '1') bases = 1;
+                    else if (p.playType === '2' || p.playType === '5') bases = 2;
+                    else if (p.playType === '3') bases = 3;
+                    else if (p.playType === '4') bases = 4;
+                    b.TB = (b.TB || 0) + bases;
+                }
+
+                // RUNS SCORED
+                if (p.runs !== undefined && p.runs > 0) {
+                    b.RUNS += p.runs;
+                }
+            }
+
+            // === DEFENSE STATS ===
+            if (isOurTeamDefending && defenderName && roster.includes(defenderName)) {
+                const dplay = p.defenderPlayType;
+                if (dplay && ['SPO','DPO','E'].includes(dplay)) {
+                    const s = gameStats[defenderName];
+                    s.gp = 1;
+                    const d = s.def;
+                    d.Att++;
+                    if (dplay === 'SPO' || dplay === 'DPO') {
+                        d.Succ++;
+                        if (dplay === 'SPO') d.SPO++;
+                        if (dplay === 'DPO') d.DPO++;
+                    }
+                    if (dplay === 'E') d.E++;
+                }
+            }
+        }
+
+        function render(id, stats, isBat, roster) {
+            const batHeaders = ['Player','GP','AB','H','AVG','RUNS','1B','2B','3B','HR','RBI','TB'];
+            const defHeaders = ['Player','GP','Att','Succ','DEF%','SPO','DPO','E'];
+            const headers = isBat ? batHeaders : defHeaders;
+
+            let html = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+
+            roster.forEach(name => {
+                const s = stats[name];
+                if (!s) return;
+                const b = s.bat;
+                const d = s.def;
+
+                let row;
+                if (isBat) {
+                    row = `<tr>
+                        <td class="player-name">${name}</td>
+                        <td>${s.gp}</td>
+                        <td>${b.AB || 0}</td>
+                        <td>${b.H || 0}</td>
+                        <td class="avg">${calcAvg(b.H || 0, b.AB || 0)}</td>
+                        <td><strong>${b.RUNS || 0}</strong></td>
+                        <td>${b['1B'] || 0}</td>
+                        <td>${b['2B'] || 0}</td>
+                        <td>${b['3B'] || 0}</td>
+                        <td>${b.HR || 0}</td>
+                        <td style="background:#fff3cd;font-weight:bold;color:#d35400">${b.RBI || 0}</td>
+                        <td style="background:#f1c40f;color:#000;font-weight:bold;font-size:1.1em">
+                            ${b.TB || 0}
+                        </td>
+                    </tr>`;
+                } else {
+                    row = `<tr>
+                        <td class="player-name">${name}</td>
+                        <td>${s.gp}</td>
+                        <td>${d.Att || 0}</td>
+                        <td>${d.Succ || 0}</td>
+                        <td class="avg">${calcAvg(d.Succ || 0, d.Att || 0)}</td>
+                        <td>${d.SPO || 0}</td>
+                        <td>${d.DPO || 0}</td>
+                        <td>${d.E || 0}</td>
+                    </tr>`;
+                }
+                html += row;
+            });
+
+            const table = document.getElementById(id);
+            if (table) {
+                table.innerHTML = html || '<tr><td colspan="12">No data</td></tr>';
+            }
+        }
+
+        function toggleAutoRefresh() {
+            if (document.getElementById('auto-refresh').checked) {
+                autoInterval = setInterval(refreshScores, 10000);
+            } else {
+                clearInterval(autoInterval);
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('Clear ALL Dartball data from this browser?')) {
+                Object.keys(localStorage)
+                    .filter(k => k.startsWith('dartball'))
+                    .forEach(k => localStorage.removeItem(k));
+                alert('All data cleared!');
+                location.reload();
+            }
+        }
+
+        window.addEventListener('storage', e => {
+            if (e.key && e.key.includes('dartball')) refreshScores();
+        });
+
+        refreshScores();
+    </script>
+</body>
+</html>

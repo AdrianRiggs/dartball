@@ -1,0 +1,294 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dartball Master Roster</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f4f6f9;
+            color: #333;
+        }
+        h1 { text-align: center; color: #1a5276; margin-bottom: 8px; }
+        .nav { text-align: center; margin: 12px 0; }
+        .nav a, .nav button {
+            margin: 0 6px; padding: 9px 14px; background: #3498db; color: #fff;
+            text-decoration: none; border: none; border-radius: 6px; font-weight: bold;
+            font-size: 0.94em; cursor: pointer; transition: .2s;
+        }
+        .nav a:hover, .nav button:hover { background: #2980b9; transform: translateY(-1px); }
+
+        .pool { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.08); margin-top: 20px; }
+        .pool h2 { margin: 0 0 12px; font-size: 1.4em; color: #2c3e50; text-align: center; }
+
+        .add-form { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .add-form input { flex: 1; min-width: 140px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 1em; }
+        .add-form button { padding: 10px 18px; background: #27ae60; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        .sort-btns { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; }
+        .sort-btns button { padding: 8px 16px; background: #8e44ad; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; }
+
+        .player-list { max-height: 420px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; padding: 6px; }
+        .player { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; background: #ecf0f1; margin: 4px 0; padding: 9px 12px; border-radius: 6px; font-size: 1.05em; }
+        .player:hover { background: #dfe6e9; }
+        .player input { border: none; background: transparent; font-size: 1em; padding: 2px 4px; outline: none; }
+        .player input:focus { background: #fff; border-bottom: 1px solid #3498db; }
+        .delete-btn { background: #e74c3c; color: #fff; border: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-weight: bold; }
+
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 20px; }
+        .btn { padding: 12px 22px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; min-width: 135px; }
+        .btn-save { background: #27ae60; color: #fff; }
+        .btn-export { background: #f39c12; color: #fff; }
+        .btn-import { background: #9b59b6; color: #fff; }
+        .btn-lineup { background: #e67e22; color: #fff; }
+
+        .import-options { margin: 15px 0; text-align: center; display: none; }
+        .import-options button { margin: 0 8px; padding: 9px 15px; background: #34495e; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+
+        .footer { text-align: center; margin-top: 35px; color: #7f8c8d; font-size: 0.9em; }
+ /* === RESPONSIVE IMPROVEMENTS === */
+    @media (max-width: 768px) {
+        body {
+            padding: 12px;
+            font-size: 16px;
+        }
+        h1 { font-size: 1.6rem; }
+
+        .nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .nav a, .nav button { flex: 1; min-width: 100px; padding: 12px 8px; font-size: 0.95rem; }
+
+        .add-form { flex-direction: column; }
+        .add-form input { min-width: 0; width: 100%; }
+        .add-form button { width: 100%; }
+
+        .sort-btns { flex-wrap: wrap; }
+        .sort-btns button { flex: 1; min-width: 120px; }
+
+        .player { gap: 8px; font-size: 1rem; padding: 12px; }
+        .player input { font-size: 1rem; padding: 8px 4px; }
+
+        .actions { flex-direction: column; align-items: center; }
+        .btn { width: 100%; max-width: 300px; padding: 14px 20px; font-size: 1.1rem; }
+
+        .import-options button { 
+            display: block; 
+            width: 100%; 
+            max-width: 280px; 
+            margin: 8px auto; 
+        }
+    }
+
+    @media (max-width: 480px) {
+        .player {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+        .player input { text-align: center; }
+        .delete-btn {
+            width: 40px;     /* slightly bigger = easier to tap */
+            height: 40px;
+            font-size: 1.3em;
+            margin: 8px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+    </style>
+</head>
+<body>
+    <h1>Dartball Master Roster</h1>
+
+    <div class="nav">
+        <button onclick="window.location.href='index.html'">Home</button>
+        <a href="dartball_game_tracker.html">Game</a>
+        <a href="dartball_lineup.html">Lineup</a>
+        <a href="dartball_stats.html">Stats</a>
+        <a href="dartball_plays_tracker.html">Plays</a>
+    </div>
+
+    <div class="pool">
+        <h2>All Players (Master List)</h2>
+
+        <div class="add-form">
+            <input type="text" id="first-name" placeholder="First Name">
+            <input type="text" id="last-name" placeholder="Last Name">
+            <button onclick="addPlayer()">Add Player</button>
+        </div>
+
+        <div class="sort-btns">
+            <button onclick="sortPlayers('first')">Sort by First</button>
+            <button onclick="sortPlayers('last')">Sort by Last</button>
+        </div>
+
+        <div class="player-list" id="player-list"></div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-save" onclick="saveRoster()">Save Roster</button>
+        <button class="btn btn-export" onclick="exportRoster()">Export .json</button>
+        <button class="btn btn-export" onclick="exportRosterTXT()">Export .txt</button>
+        <button class="btn btn-import" onclick="triggerImport()">Import .json</button>
+        <button class="btn btn-lineup" onclick="window.location.href='dartball_lineup.html'">Go to Lineup</button>
+    </div>
+
+    <div class="import-options" id="import-options">
+        <p><strong>Import mode:</strong></p>
+        <button onclick="importRoster('amend')">Add to List</button>
+        <button onclick="importRoster('replace')">Replace All</button>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json" style="display:none;">
+
+    <div class="footer">
+        This is the <strong>master player list</strong>. All other pages read from here.
+    </div>
+
+    <script>
+        const ROSTER_KEY = 'dartball_master_roster';
+        let players = [];
+
+        window.onload = loadRoster;
+
+        function loadRoster() {
+            const saved = localStorage.getItem(ROSTER_KEY);
+            if (saved) {
+                try {
+                    players = JSON.parse(saved).map(p => ({
+                        first: (p.first || '').trim(),
+                        last: (p.last || '').trim()
+                    })).filter(p => p.first && p.last);
+                } catch (e) {
+                    console.error('Load failed', e);
+                }
+            }
+            renderPlayers();
+        }
+
+        function saveRoster() {
+            localStorage.setItem(ROSTER_KEY, JSON.stringify(players));
+            alert('Master roster saved!');
+        }
+
+        function renderPlayers() {
+            const list = document.getElementById('player-list');
+            list.innerHTML = '';
+            players.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'player';
+                div.innerHTML = `
+                    <input type="text" value="${escapeHtml(p.first)}" 
+                           onblur="updatePlayer(${i}, 'first', this.value)">
+                    <input type="text" value="${escapeHtml(p.last)}" 
+                           onblur="updatePlayer(${i}, 'last', this.value)">
+                    <button class="delete-btn" onclick="deletePlayer(${i})">X</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function addPlayer() {
+            const first = document.getElementById('first-name').value.trim();
+            const last = document.getElementById('last-name').value.trim();
+            if (!first || !last) return alert('Enter both names');
+            players.push({ first, last });
+            document.getElementById('first-name').value = '';
+            document.getElementById('last-name').value = '';
+            renderPlayers();
+            saveRoster();
+        }
+
+        function updatePlayer(idx, field, value) {
+            value = value.trim();
+            if (!value) return alert('Name cannot be empty');
+            players[idx][field] = value;
+            renderPlayers();
+            saveRoster();
+        }
+
+        function deletePlayer(idx) {
+            if (confirm('Delete player?')) {
+                players.splice(idx, 1);
+                renderPlayers();
+                saveRoster();
+            }
+        }
+
+        function sortPlayers(by) {
+            players.sort((a, b) => (by === 'first' ? a.first : a.last).localeCompare(by === 'first' ? b.first : b.last));
+            renderPlayers();
+        }
+
+        function exportRoster() {
+            const data = players;
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            download(blob, `dartball_master_roster_${new Date().toISOString().slice(0,10)}.json`);
+        }
+
+        function exportRosterTXT() {
+            const txt = players.map((p, i) => `${i+1}. ${p.first} ${p.last}`).join('\n');
+            const blob = new Blob([txt], { type: 'text/plain' });
+            download(blob, `dartball_master_roster_${new Date().toISOString().slice(0,10)}.txt`);
+        }
+
+        function download(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerImport() {
+            document.getElementById('import-options').style.display = 'block';
+            document.getElementById('fileInput').click();
+        }
+
+        document.getElementById('fileInput').onchange = function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function () {
+                try {
+                    const imported = JSON.parse(reader.result).map(p => ({
+                        first: (p.first || '').trim(),
+                        last: (p.last || '').trim()
+                    })).filter(p => p.first && p.last);
+                    window.importedPlayers = imported;
+                } catch (err) {
+                    alert('Invalid JSON');
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        function importRoster(mode) {
+            if (!window.importedPlayers) return;
+            if (mode === 'replace') {
+                players = window.importedPlayers;
+            } else {
+                const existing = players.map(p => `${p.first} ${p.last}`);
+                window.importedPlayers.forEach(p => {
+                    const key = `${p.first} ${p.last}`;
+                    if (!existing.includes(key)) players.push(p);
+                });
+            }
+            renderPlayers();
+            saveRoster();
+            document.getElementById('import-options').style.display = 'none';
+            alert('Roster updated!');
+            delete window.importedPlayers;
+        }
+
+    </script>
+</body>
+</html>

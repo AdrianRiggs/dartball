@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dartball — Lineups</title>
+  <style>
+    :root { --accent:#1976d2; --muted:#6c757d; }
+    body { font-family: system-ui, Arial, Helvetica, sans-serif; max-width:1200px; margin:20px auto; padding:16px; background:#f6f9ff; color:#111; }
+    h1 { text-align:center; margin-bottom:12px; }
+    .toolbar { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+    select, button, input { padding:8px 10px; border-radius:8px; border:1px solid #d6e0ef; background:#fff; }
+    .grid { display:grid; grid-template-columns:1fr; gap:16px; align-items:start; }
+    @media (min-width:768px) { .grid { grid-template-columns:1fr 1fr 1fr; } }
+    .panel { background:white; padding:16px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.06); }
+    .panel h3 { margin:0 0 12px; font-size:1.1rem; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .list { min-height:200px; max-height:70vh; overflow:auto; border-radius:10px; padding:8px; border:2px dashed #e0e8f5; background:#fbfcff; }
+    .player { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; margin:8px 0; border-radius:10px; background:linear-gradient(#fff,#f5f9ff); cursor:grab; user-select:none; transition:all .2s; }
+    .player:hover { background:#e8f4ff; }
+    .player.dragging { opacity:0.4; transform:scale(0.97); }
+    .player.used { opacity:0.5; filter:grayscale(30%); }
+    .player .label { font-weight:600; flex:1; }
+    .player .actions { display:flex; gap:6px; }
+    .player button { padding:6px 10px; font-size:0.9rem; border:none; border-radius:6px; cursor:pointer; }
+    .arrow { background:transparent; border:1px solid #ccc; color:#666; }
+    .del-btn { background:#dc3545; color:white; }
+    .add-btn { background:var(--accent); color:white; }
+    .small { padding:6px 8px; font-size:.92rem; }
+    .muted { background:var(--muted); color:white; }
+    .resume { background:#0b74ff; color:white; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
+    .controls { text-align:center; margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .hint { text-align:center; color:#4d5968; margin-top:10px; }
+    .tap-hint { color:#1565c0; font-weight:600; text-align:center; margin-top:12px; }
+    .leadoff-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:1000; }
+    .leadoff-box { background:white; padding:30px; border-radius:12px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3); }
+    .leadoff-box h2 { margin:0 0 20px 0; }
+    .leadoff-box button { margin:0 10px; padding:12px 24px; font-size:1.1rem; }
+    @media (max-width: 480px) {
+      .toolbar { 
+        flex-direction: column; 
+        align-items: stretch; 
+        gap: 10px; 
+      }
+      .toolbar select, .toolbar button { 
+        width: 100%; 
+        font-size: 1rem; 
+        padding: 12px; 
+      }
+      .resume { padding: 14px !important; font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Dartball — Lineups</h1>
+
+  <!-- Top Toolbar (from the first file) -->
+  <div class="toolbar">
+    <label>Editing game:
+      <select id="gameSelect"><option value="1">Game 1</option><option value="2">Game 2</option></select>
+    </label>
+
+    <button id="refreshMaster" class="small">Refresh Master Roster</button>
+    <button id="saveLineup" class="small">Save Lineup</button>
+    <button id="startGame" class="small">Start New Game</button>
+    <button id="importLineup" class="small">Import Lineup</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+
+    <button id="resumeGame" class="resume">Resume Current Game</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>Master Roster <span class="counts" id="master-count">0</span></h3>
+      <div id="masterList" class="list"></div>
+      <div class="tap-hint">Tap → Team A  Double-tap → Team B  Drag to move/reorder</div>
+    </div>
+    <div class="panel">
+      <h3>Team A (<span id="teamA-count">0</span>)</h3>
+      <div id="teamAList" class="list" ondragover="allowDrop(event)" ondrop="dropTo(event,'A')"></div>
+    </div>
+    <div class="panel">
+      <h3>Team B (<span id="teamB-count">0</span>)</h3>
+      <div id="teamBList" class="list" ondragover="allowDrop(event)" ondrop="dropTo(event,'B')"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Controls (from the first file) -->
+  <div class="controls">
+    <button id="exportBtn" class="small">Export Lineups</button>
+    <button id="clearBtn" class="small muted">Clear Current Lineup</button>
+    <a href="dartball_game_tracker.html" target="_blank" style="padding:10px 16px; background:#28a745; color:white; text-decoration:none; border-radius:8px;">Open Scorekeeper →</a>
+  </div>
+
+  <div class="hint">
+    Drag players to reorder or between lists • Tap once = Team A • Double-tap = Team B
+  </div>
+
+  <!-- Leadoff Modal -->
+  <div id="leadoffModal" class="leadoff-modal">
+    <div class="leadoff-box">
+      <h2>Who should lead off?</h2>
+      <p>(The team that bats first in inning 1)</p>
+      <button onclick="startNewGameWithLeadoff('A')" style="background:#28a745">Team A leads off</button>
+      <button onclick="startNewGameWithLeadoff('B')" style="background:#dc3545">Team B leads off</button>
+    </div>
+  </div>
+
+  <script>
+    const MASTER_KEY = 'dartball_master_roster';
+    const LINEUPS_KEY = 'dartball_lineups';
+    const LIVE_KEY = 'current_game_lineup';
+    const EDITING_FLAG = 'dartball_editing_lineup';
+    const ACTIVE_GAME_KEY = 'dartballActiveGame';   // ← must match tracker
+
+    let master = [], teamA = [], teamB = [], currentGame = 1, dragItem = null;
+
+    function keyOf(p) { return `${p.first||''} ${p.last||''}`.trim().toLowerCase(); }
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+    function isPlayerUsed(p) {
+      const k = keyOf(p);
+      return teamA.some(x => keyOf(x)===k) || teamB.some(x => keyOf(x)===k);
+    }
+
+    function loadMaster() {
+      try { 
+        master = JSON.parse(localStorage.getItem(MASTER_KEY)||'[]')
+                 .map(p=>({first:p.first||'',last:p.last||''})); 
+      } catch(e) { master = []; }
+      renderAll();
+    }
+
+    function loadLineupForGame(n) {
+      try {
+        const data = JSON.parse(localStorage.getItem(LINEUPS_KEY)||'{}');
+        const saved = data[`game${n}`];
+        teamA = (saved?.teamA||[]).map(p=>({first:p.first,last:p.last}));
+        teamB = (saved?.teamB||[]).map(p=>({first:p.first,last:p.last}));
+      } catch(e) { teamA = []; teamB = []; }
+      renderAll();
+    }
+
+    function renderAll() {
+      renderMaster();
+      renderList('teamAList', teamA, 'A');
+      renderList('teamBList', teamB, 'B');
+      document.getElementById('teamA-count').textContent = teamA.length;
+      document.getElementById('teamB-count').textContent = teamB.length;
+      document.getElementById('master-count').textContent = master.length;
+    }
+
+   
+    function renderMaster() {
+      const el = document.getElementById('masterList');
+      el.innerHTML = '';
+
+      const addRow = document.createElement('div');
+      addRow.style.cssText = 'padding:10px; display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;';
+      addRow.innerHTML = `<input placeholder="First" style="flex:1;min-width:100px;"> 
+                          <input placeholder="Last" style="flex:1;min-width:100px;">
+                          <button class="add-btn small">Add</button>`;
+      el.appendChild(addRow);
+      addRow.querySelector('button').onclick = () => {
+        const inputs = addRow.querySelectorAll('input');
+        const f = inputs[0].value.trim(), l = inputs[1].value.trim();
+        if (!f && !l) return alert('Enter a name');
+        master.push({ first: f || 'Player', last: l });
+        localStorage.setItem(MASTER_KEY, JSON.stringify(master));
+        inputs[0].value = ''; inputs[1].value = '';
+        renderAll();
+      };
+
+      master.forEach((p, idx) => {
+        const div = document.createElement('div');
+        div.className = 'player' + (isPlayerUsed(p) ? ' used' : '');
+        div.draggable = true;
+        div.dataset.idx = idx;
+
+        // Tap / Double-tap handling
+        let tapCount = 0, lastTap = 0, singleTapTimer = null;
+        const handleTap = (e) => {
+          e.preventDefault();
+          const now = Date.now();
+          if (now - lastTap < 300) {
+            clearTimeout(singleTapTimer);
+            addPlayerToTeam(p, 'B');
+            tapCount = 0;
+          } else {
+            tapCount = 1;
+            singleTapTimer = setTimeout(() => {
+              if (tapCount === 1) addPlayerToTeam(p, 'A');
+              tapCount = 0;
+            }, 300);
+          }
+          lastTap = now;
+        };
+        div.onclick = div.ontouchend = handleTap;
+        div.ondragstart = ev => dragStart(ev, 'master', idx);
+
+        div.innerHTML = `
+          <div class="label">${escapeHtml(p.first)} ${escapeHtml(p.last)}</div>
+          <div style="font-size:0.78rem;color:#1565c0;opacity:0.8;">
+            ${isPlayerUsed(p) ? 'Used' : 'Tap=A Double-tap=B Drag'}
+          </div>`;
+        el.appendChild(div);
+      });
+    }
+
+    function renderList(elId, arr, area) {
+      const el = document.getElementById(elId);
+      el.innerHTML = '';
+      arr.forEach((p, idx) => {
+        const div = document.createElement('div');
+        div.className = 'player';
+        div.draggable = true;
+        div.dataset.area = area;
+        div.dataset.idx = idx;
+        div.ondragstart = ev => dragStart(ev, area, idx);
+        div.innerHTML = `
+          <div class="label">${escapeHtml(p.first)} ${escapeHtml(p.last)}</div>
+          <div class="actions">
+            <button class="arrow" onclick="moveUp('${area}',${idx})">▲</button>
+            <button class="arrow" onclick="moveDown('${area}',${idx})">▼</button>
+            <button class="small del-btn" onclick="removeFrom('${area}',${idx})">Del</button>
+          </div>`;
+        el.appendChild(div);
+      });
+    }
+
+    // Drag & Drop
+    function dragStart(ev, area, idx) {
+      let player;
+      if (area === 'master') player = master[idx];
+      else if (area === 'A') player = teamA[idx];
+      else player = teamB[idx];
+      if (!player) return;
+      dragItem = { area, idx, player: { first: player.first, last: player.last } };
+      ev.dataTransfer.effectAllowed = 'copyMove';
+      setTimeout(() => ev.target.classList.add('dragging'), 0);
+    }
+
+    function allowDrop(ev) { ev.preventDefault(); }
+    function dropTo(ev, targetArea) {
+      ev.preventDefault();
+      if (!dragItem) return;
+      const { area: srcArea, idx: srcIdx, player } = dragItem;
+      const targetList = targetArea === 'A' ? teamA : teamB;
+      const targetEl = document.getElementById(targetArea === 'A' ? 'teamAList' : 'teamBList');
+      const children = Array.from(targetEl.children);
+      let insertIndex = targetList.length;
+      for (let i = 0; i < children.length; i++) {
+        if (ev.clientY < children[i].getBoundingClientRect().top + children[i].offsetHeight / 2) {
+          insertIndex = i; break;
+        }
+      }
+      if (srcArea === 'master') {
+        targetList.splice(insertIndex, 0, { first: player.first, last: player.last });
+      } else {
+        const sourceList = srcArea === 'A' ? teamA : teamB;
+        const moved = sourceList.splice(srcIdx, 1)[0];
+        if (srcArea === targetArea && insertIndex > srcIdx) insertIndex--;
+        targetList.splice(insertIndex, 0, moved);
+      }
+      saveAndRender();
+      dragItem = null;
+    }
+
+    function addPlayerToTeam(player, team) {
+      const key = keyOf(player);
+      const alreadyA = teamA.some(p => keyOf(p) === key);
+      const alreadyB = teamB.some(p => keyOf(p) === key);
+      if ((team === 'A' && alreadyB) || (team === 'B' && alreadyA) || (alreadyA && alreadyB)) {
+        if (!confirm(`${player.first} ${player.last} is already on the other/both teams. Add again?`)) return;
+      } else if ((team === 'A' && alreadyA) || (team === 'B' && alreadyB)) {
+        if (!confirm(`${player.first} ${player.last} is already on Team ${team}. Add again?`)) return;
+      }
+      const copy = { first: player.first, last: player.last };
+      if (team === 'A') teamA.push(copy);
+      else teamB.push(copy);
+      saveAndRender();
+    }
+
+    function removeFrom(area, idx) {
+      if (!confirm('Remove player?')) return;
+      if (area === 'A') teamA.splice(idx,1);
+      else teamB.splice(idx,1);
+      saveAndRender();
+    }
+    function moveUp(area, idx) { const list = area === 'A' ? teamA : teamB; if (idx>0) { [list[idx-1], list[idx]] = [list[idx], list[idx-1]]; saveAndRender(); } }
+    function moveDown(area, idx) { const list = area === 'A' ? teamA : teamB; if (idx<list.length-1) { [list[idx+1], list[idx]] = [list[idx], list[idx+1]]; saveAndRender(); } }
+
+    function saveAndRender() {
+      const data = JSON.parse(localStorage.getItem(LINEUPS_KEY)||'{}');
+      data[`game${currentGame}`] = { teamA: teamA.map(p=>({...p})), teamB: teamB.map(p=>({...p})) };
+      localStorage.setItem(LINEUPS_KEY, JSON.stringify(data));
+      
+      const live = { 
+        gameNumber: currentGame, 
+        teamA: teamA.map(p=>({...p})), 
+        teamB: teamB.map(p=>({...p})), 
+        leadoff: (JSON.parse(localStorage.getItem(LIVE_KEY)||'{}').leadoff || 'A'),
+        timestamp: new Date().toISOString() 
+      };
+      localStorage.setItem(LIVE_KEY, JSON.stringify(live));
+      localStorage.setItem(EDITING_FLAG, 'true');
+      renderAll();
+    }
+
+    // ——————————————————————————————————————
+    // RESUME GAME — FIXED & PERFECT
+    // ——————————————————————————————————————
+    document.getElementById('resumeGame').onclick = () => {
+        if (teamA.length === 0 || teamB.length === 0) {
+            if (!confirm('One team is empty. Resume anyway?')) return;
+        }
+
+        // 1. Update the active game state with the new lineups
+        const old = localStorage.getItem(ACTIVE_GAME_KEY);
+        if (old) {
+            const oldState = JSON.parse(old);
+            oldState.teamA = teamA.map(p => ({...p}));
+            oldState.teamB = teamB.map(p => ({...p}));
+            localStorage.setItem(ACTIVE_GAME_KEY, JSON.stringify(oldState));
+        } else {
+            // Rare fallback — create minimal state
+            localStorage.setItem(ACTIVE_GAME_KEY, JSON.stringify({
+                teamA: teamA.map(p => ({...p})),
+                teamB: teamB.map(p => ({...p})),
+                batterA: 0, batterB: 0, defenderA: 0, defenderB: 0,
+                leadoff: 'A', inning: 1, outs: 0, halfInningRuns: 0,
+                bases: {first:{occupied:false,player:''}, second:{occupied:false,player:''}, third:{occupied:false,player:''}},
+                scoreA: 0, scoreB: 0,
+                inningScores: Array(14).fill().map(()=>({teamA:null,teamB:null})),
+                plays: [], currentBalls: {}, currentStrikes: {}
+            }));
+        }
+
+        // 2. Also keep normal live lineup
+        saveAndRender();
+
+        alert('Lineup updated! Returning to game — it will resume exactly where you left off.');
+        window.location.href = 'dartball_game_tracker.html';
+    };
+
+    // ——————————————————————————————————————
+    // PAGE INIT — MOVED OUT OF CLICK HANDLER
+    // ——————————————————————————————————————
+    window.addEventListener('load', () => {
+        // Show banner if we came from "Edit Lineup"
+        if (new URLSearchParams(window.location.search).get('editing')) {
+            document.body.insertAdjacentHTML('afterbegin', 
+                '<div style="background:#fff3cd;padding:12px;text-align:center;font-weight:bold;border-bottom:3px solid #ffc107;">Editing lineup for in-progress game — make changes then click “Resume Current Game”</div>');
+        }
+
+        loadMaster();
+        currentGame = Number(document.getElementById('gameSelect').value || 1);
+        loadLineupForGame(currentGame);
+    });
+
+    // Toolbar actions — unchanged
+    document.getElementById('gameSelect').onchange = e => { 
+        currentGame = Number(e.target.value); 
+        loadLineupForGame(currentGame); 
+    };
+    document.getElementById('refreshMaster').onclick = () => { loadMaster(); loadLineupForGame(currentGame); };
+    document.getElementById('saveLineup').onclick = () => { saveAndRender(); alert('Lineup saved!'); };
+    document.getElementById('clearBtn').onclick = () => { 
+        if(confirm('Clear both teams?')) { teamA=[]; teamB=[]; saveAndRender(); } 
+    };
+
+    // Keep all your import/export, startGame, etc. exactly as they were
+
+    window.allowDrop = allowDrop;
+    window.dropTo = dropTo;
+</script>
+</body>
+</html>

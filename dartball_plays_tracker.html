@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dartball Plays Tracker</title>
+    <style>
+        body {font-family:Arial,sans-serif;max-width:1200px;margin:0 auto;padding:20px;background:#f9f9f9;}
+        h1,h3,.header,.nav,.controls,.status,.live-indicator {text-align:center;}
+        .nav a {margin:0 15px;color:#007bff;text-decoration:none;font-weight:bold;}
+        .nav a:hover {text-decoration:underline;}
+        .controls {display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:25px 0;align-items:center;}
+        button {padding:11px 20px;border:none;border-radius:6px;cursor:pointer;color:white;font-size:16px;}
+        select {padding:10px;border-radius:6px;border:1px solid #ccc;font-size:16px;}
+        .refresh-btn {background:#28a745;} .refresh-btn:hover {background:#218838;}
+        .export-html-btn {background:#007bff;} .export-html-btn:hover {background:#0056b3;}
+        .export-json-btn {background:#6f42c1;} .export-json-btn:hover {background:#5a32a3;}
+        .toggle-btn {background:#6c757d;} .toggle-btn:hover {background:#5a6268;}
+        .score-sheet {background:white;padding:22px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);margin:25px 0;overflow-x:auto;}
+        table {width:100%;border-collapse:collapse;font-size:0.95em;}
+        th,td {border:1px solid #ccc;padding:10px;text-align:center;min-width:55px;}
+        th {background:#2874a6;color:white;font-weight:bold;}
+        tr:nth-child(even) {background:#f8f9fa;}
+        .team-header {background:#d0e6ff;font-weight:bold;font-size:1.1em;color:#1a5276;}
+        .sko-cell {background:#ffb3b3 !important;font-weight:bold;color:#900;}
+        .code {font-weight:bold;padding:2px 6px;border-radius:4px;}
+        .hit {background:#d5f4e6;color:#27ae60;}
+        .out {background:#fadbd8;color:#c0392b;}
+        .bb {background:#d6eaf8;color:#2980b9;}
+        .spo {background:#ebdef0;color:#8e44ad;}
+        .dpo {background:#d1f2eb;color:#16a085;}
+        .error {background:#f9d6d5;color:#e74c3c;}
+        .live-indicator {background:#d4edda;color:#155724;padding:12px;border-radius:8px;font-weight:bold;margin:15px 0;font-size:1.1em;}
+        .game-selector {margin:0 10px;font-weight:bold;color:#333;}
+   /* ——— MOBILE PERFECTION FOR PLAYS TRACKER ——— */
+@media (max-width: 840px) {
+    body { padding: 12px; }
+    h1 { font-size: 1.6rem; }
+    .controls { gap: 10px; flex-direction: column; align-items: stretch; }
+    button, select { width: 100%; font-size: 1.1rem; padding: 14px; }
+
+    /* Make tables scrollable + compact on phones */
+    .score-sheet { padding: 14px; }
+    table { font-size: 0.82rem; }
+    th, td { padding: 7px 4px; min-width: 38px; }
+    th { font-size: 0.78rem; }
+
+    /* Tiny screens – make inning numbers tiny but still readable */
+    @media (max-width: 480px) {
+        table { font-size: 0.72rem; }
+        th, td { padding: 5px 3px; min-width: 32px; }
+        th { font-size: 0.7rem; }
+        .code { padding: 1px 4px; font-size: 0.9em; }
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dartball Plays Tracker</h1>
+        <p>Live Offense & Defense Play-by-Play • Auto-syncs with Scorekeeper</p>
+    </div>
+
+    <div class="nav">
+        <a href="dartball_game_tracker.html">Scorekeeper</a> |
+        <a href="scoresheet.html">Team Scoresheet</a> |
+        <a href="player_stats.html">Player Stats</a>
+    </div>
+
+    <div class="controls">
+        <div class="game-selector">
+            View Game:
+            <select id="gameSelect">
+                <option value="1">Game 1</option>
+                <option value="2">Game 2</option>
+            </select>
+        </div>
+
+        <button class="refresh-btn" onclick="loadData()">Refresh Now</button>
+        <button class="export-html-btn" onclick="exportAsHTML()">Export as HTML</button>
+        <button class="export-json-btn" onclick="exportAsJSON()">Export Plays as JSON</button>
+        <button class="toggle-btn" id="toggleBtn" onclick="toggleView()">Show Active Only</button>
+    </div>
+
+    <div id="live-indicator" class="live-indicator" style="display:none;">
+        LIVE • Game <span id="currentGameNum">1</span> • <span id="playCount">0</span> plays recorded
+    </div>
+    <div class="status" id="status">Loading data...</div>
+
+    <!-- OFFENSE -->
+    <div class="score-sheet">
+        <h3>Offense Plays (by Inning)</h3>
+        <table id="offense-table">
+            <thead>
+                <tr><th>Player</th><th>Team</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th></tr>
+            </thead>
+            <tbody id="offense-body"></tbody>
+        </table>
+    </div>
+
+    <!-- DEFENSE -->
+    <div class="score-sheet">
+        <h3>Defense Plays (by Inning)</h3>
+        <table id="defense-table">
+            <thead>
+                <tr><th>Defender</th><th>Team</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th></tr>
+            </thead>
+            <tbody id="defense-body"></tbody>
+        </table>
+    </div>
+
+<script>
+    let showActiveOnly = false;
+    let currentGame = 1;
+
+    // Listen for game selector change
+    document.getElementById('gameSelect').addEventListener('change', (e) => {
+        currentGame = Number(e.target.value);
+        document.getElementById('currentGameNum').textContent = currentGame;
+        loadData();
+    });
+
+    // Auto-clear when a new game starts (detected via lineup change or state reset)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'current_game_lineup' || e.key === 'dartball_game1_plays' || e.key === 'dartball_game2_plays') {
+            const live = JSON.parse(localStorage.getItem('current_game_lineup') || '{}');
+            const gameNum = live.gameNumber || 1;
+            if (currentGame !== gameNum) {
+                // User started a new game in another tab — switch view
+                currentGame = gameNum;
+                document.getElementById('gameSelect').value = currentGame;
+                document.getElementById('currentGameNum').textContent = currentGame;
+            }
+            loadData();
+        }
+    });
+
+    function getPlaysForGame(gameNum) {
+        const key = `dartball_game${gameNum}_plays`;
+        try {
+            return JSON.parse(localStorage.getItem(key) || '[]');
+        } catch(e) {
+            return [];
+        }
+    }
+
+    function getLineup() {
+        const data = localStorage.getItem('current_game_lineup');
+        if (!data) return {teamA: [], teamB: []};
+        try {
+            const l = JSON.parse(data);
+            return {
+                teamA: (l.teamA || []).map(p => typeof p === 'string' ? p : `${p.first || ''} ${p.last || ''}`.trim()).filter(Boolean),
+                teamB: (l.teamB || []).map(p => typeof p === 'string' ? p : `${p.first || ''} ${p.last || ''}`.trim()).filter(Boolean)
+            };
+        } catch(e) { console.error(e); return {teamA: [], teamB: []}; }
+    }
+
+    function getName(p) {
+        if (!p) return '';
+        if (typeof p === 'string') return p.trim();
+        if (p.first && p.last) return `${p.first.trim()} ${p.last.trim()}`;
+        if (p.name) return p.name.trim();
+        return String(p).trim();
+    }
+
+    function colorCode(code) {
+        const styles = {
+            '1':'hit','2':'hit','3':'hit','4':'hit','5':'hit',
+            'BB':'bb','O':'out','SPO':'spo','DPO':'dpo','E':'error',
+            'SKO':'out','SKOY':'out','SPOY':'spo'
+        };
+        const cls = styles[code] || 'out';
+        return `<span class="code ${cls}">${code}</span>`;
+    }
+
+    function loadData() {
+        const plays = getPlaysForGame(currentGame);
+        const lineup = getLineup();
+
+        const offenseMap = {};
+        const defenseMap = {};
+
+        plays.forEach(play => {
+            const inningIdx = (play.inning || 1) - 1;
+            if (inningIdx < 0 || inningIdx > 13) return;
+
+            const batterName = getName(play.player);
+            const defenderName = play.defender ? getName(play.defender) : null;
+
+            if (batterName && play.playType) {
+                const key = `${play.team}_${batterName}`;
+                if (!offenseMap[key]) offenseMap[key] = Array(14).fill().map(() => []);
+                offenseMap[key][inningIdx].push(play.playType);
+            }
+
+            if (defenderName && play.defenderPlayType) {
+                const defendingTeam = play.team === 'A' ? 'B' : 'A';
+                const key = `${defendingTeam}_${defenderName}`;
+                if (!defenseMap[key]) defenseMap[key] = Array(14).fill().map(() => []);
+                defenseMap[key][inningIdx].push(play.defenderPlayType);
+            }
+        });
+
+        // Render Offense
+        let offHTML = '';
+        ['A','B'].forEach(team => {
+            const players = team === 'A' ? lineup.teamA : lineup.teamB;
+            if (players.length === 0) return;
+            offHTML += `<tr class="team-header"><td colspan="16">Team ${team} — At Bat</td></tr>`;
+            players.forEach(name => {
+                const key = `${team}_${name}`;
+                const row = offenseMap[key] || Array(14).fill().map(() => []);
+                let cells = '';
+                for (let i = 0; i < 14; i++) {
+                    const codes = row[i];
+                    const display = codes.length ? codes.map(colorCode).join(', ') : '—';
+                    const hasSKO = codes.some(c => c.includes('SKO'));
+                    cells += `<td${hasSKO ? ' class="sko-cell"' : ''}>${display}</td>`;
+                }
+                offHTML += `<tr><td><strong>${name}</strong></td><td>${team}</td>${cells}</tr>`;
+            });
+        });
+        document.getElementById('offense-body').innerHTML = offHTML || '<tr><td colspan="16">No offensive plays recorded yet.</td></tr>';
+
+        // Render Defense
+        let defHTML = '';
+        ['A','B'].forEach(team => {
+            const players = team === 'A' ? lineup.teamA : lineup.teamB;
+            if (players.length === 0) return;
+            defHTML += `<tr class="team-header"><td colspan="16">Team ${team} — In the Field</td></tr>`;
+            players.forEach(name => {
+                const key = `${team}_${name}`;
+                const row = defenseMap[key] || Array(14).fill().map(() => []);
+                let cells = '';
+                for (let i = 0; i < 14; i++) {
+                    const codes = row[i];
+                    const display = codes.length ? codes.map(colorCode).join(', ') : '—';
+                    cells += `<td>${display}</td>`;
+                }
+                defHTML += `<tr><td><strong>${name}</strong></td><td>${team}</td>${cells}</tr>`;
+            });
+        });
+        document.getElementById('defense-body').innerHTML = defHTML || '<tr><td colspan="16">No defensive plays recorded yet.</td></tr>';
+
+        document.getElementById('playCount').textContent = plays.length;
+        document.getElementById('live-indicator').style.display = plays.length ? 'block' : 'none';
+        document.getElementById('status').textContent = `Game ${currentGame} • ${plays.length} plays • Updated just now`;
+    }
+
+    function toggleView() {
+        showActiveOnly = !showActiveOnly;
+        document.getElementById('toggleBtn').textContent = showActiveOnly ? 'Show All Players' : 'Show Active Only';
+        loadData();
+    }
+
+    function exportAsHTML() {
+        const content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dartball Plays Tracker - Game ${currentGame}</title><style>
+            body{font-family:Arial;margin:40px;background:#f9f9f9;}h1,h3{text-align:center;}
+            table{width:100%;border-collapse:collapse;margin:30px 0;}th,td{border:1px solid #000;padding:12px;text-align:center;}
+            th{background:#2874a6;color:white;}tr:nth-child(even){background:#f8f9fa;}
+            .sko-cell{background:#ffb3b3;}.team-header{background:#d0e6ff;font-weight:bold;}
+            .code{font-weight:bold;padding:3px 7px;border-radius:4px;}
+            .hit{background:#d5f4e6;color:#27ae60;}.out,.error{background:#fadbd8;color:#c0392b;}
+            .bb{background:#d6eaf8;color:#2980b9;}.spo{background:#ebdef0;color:#8e44ad;}.dpo{background:#d1f2eb;color:#16a085;}
+        </style></head><body>
+            <h1>Dartball Plays Tracker — Game ${currentGame}</h1>
+            <h2>Offense Plays</h2>${document.getElementById('offense-table').outerHTML}
+            <h2>Defense Plays</h2>${document.getElementById('defense-table').outerHTML}
+        </body></html>`;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([content], {type: 'text/html'}));
+        a.download = `dartball_plays_game${currentGame}_${new Date().toISOString().slice(0,10)}.html`;
+        a.click();
+    }
+
+    function exportAsJSON() {
+        const plays = getPlaysForGame(currentGame);
+        const blob = new Blob([JSON.stringify(plays, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `dartball_plays_game${currentGame}_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+
+    // Auto-refresh
+    setInterval(loadData, 8000);
+    window.addEventListener('storage', (e) => {
+        if (e.key && e.key.includes('dartball')) loadData();
+    });
+
+    // Init
+    currentGame = Number(document.getElementById('gameSelect').value);
+    document.getElementById('currentGameNum').textContent = currentGame;
+    loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dartball Player Stats</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; background: #f9f9f9; line-height: 1.5; }
+        h1, .player-info { text-align: center; color: #1a5276; }
+        .player-info { font-size: 1.8em; margin: 20px 0; font-weight: bold; }
+        .links { text-align: center; margin: 15px 0; }
+        .links a { color: #007bff; margin: 0 15px; text-decoration: none; }
+        .controls { text-align: center; padding: 20px; background: #f0f0f0; border-radius: 8px; margin: 20px 0; }
+        select, button { padding: 10px; margin: 5px; font-size: 16px; border-radius: 6px; }
+        button { background: #1a5276; color: white; border: none; cursor: pointer; }
+        button:hover { background: #154360; }
+        .tables-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 30px; }
+        .game-table { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 320px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: center; }
+        th { background: #2874a6; color: white; }
+        .avg { font-weight: bold; color: #d35400; }
+        .batting { background: #f0f8ff; }
+        .defense { background: #fffbe6; }
+        @media print { .controls, .links, button { display: none; } }
+   /* ——— MOBILE PERFECTION FOR PLAYER STATS ——— */
+@media (max-width: 720px) {
+    body { margin: 14px; }
+    h1 { font-size: 1.7rem; }
+    .player-info { font-size: 1.6rem; margin: 16px 0; }
+
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 18px;
+    }
+    select, button {
+        width: 100%;
+        font-size: 1.1rem;
+        padding: 14px;
+    }
+
+    .tables-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .game-table {
+        min-width: 280px;
+        max-width: 380px;
+        width: 100%;
+    }
+    table { font-size: 0.95rem; }
+    th, td { padding: 8px 6px; }
+}
+   
+    </style>
+</head>
+<body>
+    <h1>Dartball Player Stats</h1>
+    <div class="links">
+        <a href="dartball_game_tracker.html">Game Tracker</a> |
+        <a href="scoresheet.html">Team Scoresheet</a>
+    </div>
+
+    <div class="controls">
+        <select id="player-select"><option>Loading players...</option></select>
+        <button onclick="loadPlayer()">Load Stats</button>
+        <button onclick="refreshPlayers()">Refresh List</button>
+        <label><input type="checkbox" id="auto" onchange="toggleAuto()"> Auto-refresh</label>
+    </div>
+
+    <div class="player-info" id="player-name">Select a player</div>
+    <div id="tables" class="tables-container"></div>
+
+<script>
+    function getAllPlays() {
+        const c = localStorage.getItem('dartball_combined_plays');
+        if (c) return JSON.parse(c);
+        const g1 = JSON.parse(localStorage.getItem('dartball_game1_plays') || '[]');
+        const g2 = JSON.parse(localStorage.getItem('dartball_game2_plays') || '[]');
+        return [...g1.map(p=>({...p,game:1})), ...g2.map(p=>({...p,game:2}))];
+    }
+
+    function getAllPlayers() {
+        const lineup = JSON.parse(localStorage.getItem('current_game_lineup') || '{}');
+        const names = new Set();
+        [lineup.teamA || [], lineup.teamB || []].flat().forEach(p => {
+            const name = typeof p === 'string' ? p : `${p.first||''} ${p.last||''}`.trim();
+            if (name) names.add(name);
+        });
+        return Array.from(names).sort();
+    }
+
+    function refreshPlayers() {
+        const sel = document.getElementById('player-select');
+        sel.innerHTML = '<option value="">Select player</option>';
+        getAllPlayers().forEach(n => {
+            const opt = new Option(n, n);
+            sel.add(opt);
+        });
+    }
+
+    function calcAvg(n, d) { return d > 0 ? (n/d).toFixed(3) : '—'; }
+
+    function buildStatTable(title, bat, def) {
+        const batAvg = calcAvg(bat.H, bat.AB);
+        const defAvg = calcAvg(def.Succ, def.Att);
+        return `
+            <div class="game-table">
+                <h3>${title}</h3>
+                <table><tr><th colspan="2">Batting</th></tr>
+                    <tr class="batting"><td>AB</td><td>${bat.AB}</td></tr>
+                    <tr class="batting"><td>Hits</td><td>${bat.H}</td></tr>
+                    <tr class="batting"><td>Avg</td><td class="avg">${batAvg}</td></tr>
+                    <tr class="batting"><td>RUNS</td><td><strong>${bat.RUNS}</strong></td></tr>
+                    <tr class="batting"><td>1B</td><td>${bat['1B']||0}</td></tr>
+                    <tr class="batting"><td>2B/H&R</td><td>${bat['2B']||0}</td></tr>
+                    <tr class="batting"><td>3B</td><td>${bat['3B']||0}</td></tr>
+                    <tr class="batting"><td>HR</td><td>${bat.HR||0}</td></tr>
+                    <tr class="batting"><td>RBI</td><td>${bat.RBI||0}</td></tr>
+                </table>
+                <table><tr><th colspan="2">Defense</th></tr>
+                    <tr class="defense"><td>Attempts</td><td>${def.Att||0}</td></tr>
+                    <tr class="defense"><td>Successes</td><td>${def.Succ||0}</td></tr>
+                    <tr class="defense"><td>Def Avg</td><td class="avg">${defAvg}</td></tr>
+                    <tr class="defense"><td>SPO</td><td>${def.SPO||0}</td></tr>
+                    <tr class="defense"><td>DPO</td><td>${def.DPO||0}</td></tr>
+                    <tr class="defense"><td>Errors</td><td>${def.E||0}</td></tr>
+                </table>
+            </div>`;
+    }
+
+    function loadPlayer() {
+        const name = document.getElementById('player-select').value;
+        if (!name) return;
+        document.getElementById('player-name').textContent = name;
+
+        const plays = getAllPlays();
+        const g1 = { bat: {AB:0,H:0,'1B':0,'2B':0,'3B':0,HR:0,RUNS:0,RBI:0}, def: {Att:0,Succ:0,SPO:0,DPO:0,E:0} };
+        const g2 = JSON.parse(JSON.stringify(g1));
+        const comb = JSON.parse(JSON.stringify(g1));
+
+        plays.forEach(p => {
+            const stats = p.game === 1 ? g1 : g2;
+            const isBatter = p.player === name;
+            const isDefender = p.defender === name;
+
+            if (isBatter) {
+                stats.bat.AB++;
+                if (['1','2','3','4','5'].includes(p.playType)) {
+                    stats.bat.H++;
+                    if (p.playType==='1') { stats.bat['1B']++; stats.bat.RUNS+=1; stats.bat.RBI+=1; }
+                    if (p.playType==='2'||p.playType==='5') { stats.bat['2B']++; stats.bat.RUNS+=2; stats.bat.RBI+=1; }
+                    if (p.playType==='3') { stats.bat['3B']++; stats.bat.RUNS+=3; stats.bat.RBI+=1; }
+                    if (p.playType==='4') { stats.bat.HR++; stats.bat.RUNS+=4; stats.bat.RBI+=1; }
+                }
+                if (p.playType==='BB') stats.bat.RUNS+=1;
+            }
+            if (isDefender && p.defenderPlayType) {
+                stats.def.Att++;
+                if (p.defenderPlayType==='SPO') { stats.def.Succ++; stats.def.SPO++; }
+                if (p.defenderPlayType==='DPO') { stats.def.Succ++; stats.def.DPO++; }
+                if (p.defenderPlayType==='E') stats.def.E++;
+            }
+        });
+
+        // Combine
+        Object.keys(g1.bat).forEach(k => comb.bat[k] = (g1.bat[k]||0) + (g2.bat[k]||0));
+        Object.keys(g1.def).forEach(k => comb.def[k] = (g1.def[k]||0) + (g2.def[k]||0));
+
+        document.getElementById('tables').innerHTML =
+            buildStatTable('Game 1', g1.bat, g1.def) +
+            buildStatTable('Game 2', g2.bat, g2.def) +
+            buildStatTable('Combined', comb.bat, comb.def);
+    }
+
+    let autoInt;
+    function toggleAuto() {
+        if (document.getElementById('auto').checked) {
+            autoInt = setInterval(loadPlayer, 10000);
+        } else clearInterval(autoInt);
+    }
+
+    window.addEventListener('storage', e => { if (e.key?.includes('dartball')) { refreshPlayers(); loadPlayer(); } });
+    refreshPlayers();
+</script>
+</body>
+</html>
