@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -189,7 +189,7 @@
         }
         .base .player-label {
             position: absolute;
-            bottom: -20px;
+           top: -40px;
             left: 0;
             right: 0;
             text-align: center;
@@ -1050,23 +1050,19 @@
         }
 
         // Place batter
-        let batterLabel = batter;
-        if (teamA.length && teamB.length) {
-            const num = (batterIndex[batTeam] % teamSize(batTeam)) + 1;
-            batterLabel = batTeam.toLowerCase() + num;
-        }
+     
 
         if (play === 'HR') {
             runsScored++;  // batter scores
             playCode = '4';
         } else if (play === '3rd') {
-            newBases.third = { occupied: true, player: batterLabel };
+            newBases.third = { occupied: true, player: batter };
             playCode = '3';
         } else if (play === '2nd' || play === 'H&R') {
-            newBases.second = { occupied: true, player: batterLabel };
+            newBases.second = { occupied: true, player: batter };
             playCode = play === '2nd' ? '2' : '5';
         } else if (play === '1st') {
-            newBases.first = { occupied: true, player: batterLabel };
+            newBases.first = { occupied: true, player: batter };
             playCode = '1';
         }
 
@@ -1088,35 +1084,61 @@
         currentState.currentBalls[currentState.batterIndex] = 0;
         currentState.currentStrikes[currentState.batterIndex] = 0;
 
-    } else if (play === 'Ball') {
-        currentState.currentBalls[currentState.batterIndex] = (currentState.currentBalls[currentState.batterIndex] || 0) + 1;
-        if (currentState.currentBalls[currentState.batterIndex] >= 4) {
-            let newBases = JSON.parse(JSON.stringify(currentState.bases));
-            const wasLoaded = newBases.first.occupied && newBases.second.occupied && newBases.third.occupied;
-            if (wasLoaded) runsScored = 1;
-            if (newBases.second.occupied) newBases.third = { occupied: true, player: newBases.second.player };
-            if (newBases.first.occupied) newBases.second = { occupied: true, player: newBases.first.player };
-            newBases.first = { occupied: true, player: batter };
-            currentState.bases = newBases;
-            currentState.halfInningRuns += runsScored;
-            currentState[batTeam === 'A' ? 'teamA' : 'teamB'] += runsScored;
+} else if (play === 'Ball') {
+    currentState.currentBalls[currentState.batterIndex] = (currentState.currentBalls[currentState.batterIndex] || 0) + 1;
 
-           currentState.plays.push({
-    inning: currentState.inning,
-    team: batTeam,
-    player: batter,
-    playType: 'BB',
-    rbi: wasLoaded ? 1 : 0,
-    runs: runsScored,
-    atBat: true,     // counts toward batting average denominator
-    hit: true,       // counts in the numerator → raises batting average
-    timestamp: Date.now()
-});
+    if (currentState.currentBalls[currentState.batterIndex] >= 4) {
+        let newBases = JSON.parse(JSON.stringify(currentState.bases));
+        let runsScored = 0;
 
-            advanceBatterFlag = true;
-            currentState.currentBalls[currentState.batterIndex] = 0;
-            currentState.currentStrikes[currentState.batterIndex] = 0;
+        // Only force runners if first base is occupied
+        if (newBases.first.occupied) {
+
+            // 1. Runner on 3rd scores
+            if (newBases.third.occupied) {
+                runsScored = 1;
+            }
+
+            // 2. Runner on 2nd → 3rd (this preserves a2!)
+            if (newBases.second.occupied) {
+                newBases.third = { occupied: true, player: newBases.second.player };  // a2 → 3rd
+            } else {
+                newBases.third = { occupied: false, player: '' };
+            }
+
+            // 3. Runner on 1st → 2nd
+            newBases.second = { occupied: true, player: newBases.first.player };  // a3 → 2nd
         }
+
+        // 4. Batter goes to 1st
+ 
+        newBases.first = { occupied: true, player: batter };
+
+        // DO NOT clear third unless it was empty after shift
+        // → We already correctly placed runner from 2nd there
+
+        currentState.bases = newBases;
+        currentState.halfInningRuns += runsScored;
+        currentState[batTeam === 'A' ? 'teamA' : 'teamB'] += runsScored;
+
+        currentState.plays.push({
+            inning: currentState.inning,
+            team: batTeam,
+            player: batter,
+            playType: 'BB',
+            rbi: runsScored > 0 ? 1 : 0,
+            runs: runsScored,
+            atBat: true,
+            hit: true,
+            timestamp: Date.now()
+        });
+
+        advanceBatterFlag = true;
+        currentState.currentBalls[currentState.batterIndex] = 0;
+        currentState.currentStrikes[currentState.batterIndex] = 0;
+    }
+
+
     } else if (play === 'Green') {
         currentState.currentStrikes[currentState.batterIndex] = (currentState.currentStrikes[currentState.batterIndex] || 0) + 1;
         if (currentState.currentStrikes[currentState.batterIndex] >= 3) {
@@ -1143,47 +1165,72 @@
         } else {
             currentState.awaitingDefender = true;
         }
-    } else if (play.startsWith('Defender')) {
-        const defDart = play.replace('Defender', '');
-        const strikes = currentState.currentStrikes[currentState.batterIndex] || 0;
-        let defCode = '';
+} else if (play.startsWith('Defender')) {
+    const defDart = play.replace('Defender', '');
+    const strikes = currentState.currentStrikes[currentState.batterIndex] || 0;
+    let defCode = '';
 
-        if (currentState.batterDart === 'Blue') {
-            if (defDart === 'Blue' || defDart === 'Yellow') { currentState.outs++; defCode = 'SPO'; }
-            else if (defDart === 'Miss') {
-                currentState.currentStrikes[currentState.batterIndex] = strikes + 1;
-                defCode = strikes + 1 >= 3 ? 'SKO' : 'E';
-                if (strikes + 1 >= 3) { currentState.outs++; advanceBatterFlag = true; currentState.currentBalls[currentState.batterIndex] = 0; currentState.currentStrikes[currentState.batterIndex] = 0; }
-            }
-        } else if (currentState.batterDart === 'Yellow') {
-            if (defDart === 'Yellow' && hasRunners() && currentState.outs < 2) {
-                currentState.outs += 2;
-                removeRunnerClosestToHome();
-                defCode = 'DPO';
-            } else if (defDart === 'Yellow' || defDart === 'Blue') {
+    if (currentState.batterDart === 'Blue') {
+        if (defDart === 'Blue' || defDart === 'Yellow') {
+            currentState.outs++;
+            defCode = 'SPO';
+            advanceBatterFlag = true;           // out → batter advances
+        }
+        else if (defDart === 'Miss') {
+            currentState.currentStrikes[currentState.batterIndex] = strikes + 1;
+            defCode = strikes + 1 >= 3 ? 'SKO' : 'E';
+            if (strikes + 1 >= 3) {
                 currentState.outs++;
-                defCode = 'SPO';
-            } else if (defDart === 'Miss') {
-                currentState.currentStrikes[currentState.batterIndex] = strikes + 1;
-                defCode = strikes + 1 >= 3 ? 'SKO' : 'E';
-                if (strikes + 1 >= 3) { currentState.outs++; advanceBatterFlag = true; currentState.currentBalls[currentState.batterIndex] = 0; currentState.currentStrikes[currentState.batterIndex] = 0; }
+                advanceBatterFlag = true;       // 3rd strike → out → batter advances
+                currentState.currentBalls[currentState.batterIndex] = 0;
+                currentState.currentStrikes[currentState.batterIndex] = 0;
+            }
+            // else: just a strike → NO advanceBatterFlag!
+        }
+    } 
+    else if (currentState.batterDart === 'Yellow') {
+        if (defDart === 'Yellow' && hasRunners() && currentState.outs < 2) {
+            currentState.outs += 2;
+            removeRunnerClosestToHome();
+            defCode = 'DPO';
+            advanceBatterFlag = true;           // double play → batter out
+        }
+        else if (defDart === 'Yellow' || defDart === 'Blue') {
+            currentState.outs++;
+            defCode = 'SPO';
+            advanceBatterFlag = true;           // single play out
+        }
+        else if (defDart === 'Miss') {
+            currentState.currentStrikes[currentState.batterIndex] = strikes + 1;
+            defCode = strikes + 1 >= 3 ? 'SKO' : 'E';
+            if (strikes + 1 >= 3) {
+                currentState.outs++;
+                advanceBatterFlag = true;
+                currentState.currentBalls[currentState.batterIndex] = 0;
+                currentState.currentStrikes[currentState.batterIndex] = 0;
             }
         }
+    }
 
-        currentState.plays.push({
-            inning: currentState.inning,
-            team: batTeam,
-            player: batter,
-            defender: defender,
-            playType: currentState.batterDart === 'Blue' ? 'S' : 'Y',
-            defenderPlayType: defCode,
-            timestamp: Date.now()
-        });
+    // Record the play
+    currentState.plays.push({
+        inning: currentState.inning,
+        team: batTeam,
+        player: batter,
+        defender: defender,
+        playType: currentState.batterDart === 'Blue' ? 'S' : 'Y',
+        defenderPlayType: defCode,
+        timestamp: Date.now()
+    });
 
-        advanceBatterFlag = true;
-        currentState.awaitingDefender = false;
-        currentState.batterDart = null;
-    advanceDefender();   // ← This makes it go to next defender automatically
+    // ALWAYS advance defender — they threw the dart!
+    advanceDefender();
+
+    // Reset defender mode
+    currentState.awaitingDefender = false;
+    currentState.batterDart = null;
+
+    // DO NOT TOUCH advanceBatterFlag here — it's already set correctly above
 }
 
     if (currentState.outs >= 3) endHalfInning();
