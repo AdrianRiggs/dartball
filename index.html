@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="theme.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dartball Manager</title>
@@ -21,6 +22,93 @@
         .menu a:hover { background: #e7f3ff; }
     </style>
 </head>
+<style>
+  /* Theme Selector Popup - Now Fully Dynamic! */
+  #themePanel {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+  }
+
+  #themePanel .panel-inner {
+    background: var(--popup-bg, #222);
+    color: var(--popup-text, white);
+    padding: 30px 35px;
+    border-radius: 20px;
+    max-width: 92%;
+    max-height: 92%;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  }
+
+  #themePanel h2 {
+    margin-top: 0;
+    color: var(--popup-accent, #88ccff);
+  }
+
+  .tbtn {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 16px;
+    font-size: 18px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+
+  /* These will be overridden dynamically — just fallback */
+  .tbtn:nth-child(1) { background: #001122; color: #88ccff; }
+  .tbtn:nth-child(2) { background: #002200; color: #88ff88; }
+  .tbtn:nth-child(3) { background: #1a1a1a; color: #ffddaa; }
+  .tbtn:nth-child(4) { background: #2d1b3a; color: #ffd700; }
+ 
+  #themePanel label {
+    color: var(--popup-text, white);
+    font-size: 16px;
+  }
+
+  #themePanel input[type="color"] {
+    width: 100%;
+    height: 50px;
+    border: 2px solid var(--popup-text, white);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  #themePanel button:not(.tbtn) {
+    margin-top: 15px;
+    padding: 12px 35px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  #themePanel .close-btn {
+    background: #c62828;
+    color: white;
+  }
+
+  #themePanel .custom-btn {
+    background: #6a1b9a;
+    color: #ffeb3b;
+  }
+
+  #themePanel .apply-custom-btn {
+    background: #00c853;
+    color: white;
+  }
+</style>
+
 <body>
     <h1>Dartball Manager</h1>
        <p>Starting from scratch -1 Make a Roster and save- 2 Make Lineups-3 Play Game<p>
@@ -32,6 +120,50 @@
         <a href="dartball_plays_tracker.html">4.a Game's Scoresheet--Tracking Plays</a>
         <a href="scoresheet.html">4.b Stats for Games 1 & 2</a>
         <a href="players_stats.html">4.c Individual Player's Stats</a>
+    
 
-</body>
-</html>
+<!-- Theme button + full popup (copy-paste exactly this block on EVERY page) -->
+<div style="position:fixed; bottom:15px; right:15px; z-index:9999;">
+  <button onclick="document.getElementById('themePanel').style.display='flex'"
+          style="padding:14px 22px; font-size:18px; background:#222; color:white; border:none; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.6); cursor:pointer;">
+    Theme
+  </button>
+</div>
+
+<div id="themePanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center;">
+  <div class="panel-inner">
+  <h2>Dartball Projector Theme</h2>
+
+  <button onclick="setTheme('midnight')"  class="tbtn" data-theme="midnight">Midnight Blue</button>
+  <button onclick="setTheme('forest')"    class="tbtn" data-theme="forest">Forest Green</button>
+  <button onclick="setTheme('charcoal')"  class="tbtn" data-theme="charcoal">Charcoal + Cream</button>
+  <button onclick="setTheme('retro')"     class="tbtn" data-theme="retro">Retro Purple + Gold</button>
+ <button onclick="setTheme('light')" class="tbtn" data-theme="light"
+        style="background:#f9f9f9; color:#222; border:2px solid #333; font-weight:bold;">
+  Original Light Theme (Default)
+</button>
+  <!-- PROJECTOR FAVORITE BUTTONS -->
+  <button onclick="setTheme('projector')" class="tbtn" data-theme="projector" id="projectorBtn">
+    Projector Favorite (Saved)
+  </button>
+
+  <button onclick="saveAsProjectorFavorite()" class="tbtn" style="background:#ff9800; color:white; font-weight:bold; margin-top:15px;">
+    Save as Projector Favorite
+  </button>
+
+  <button onclick="document.getElementById('cust').style.display='block'; this.style.display='none';"
+          class="tbtn custom-btn">Custom Colors</button>
+
+  <div id="cust" style="display:none; margin-top:20px;">
+    <label>Background     <input type="color" id="custBg"></label><br><br>
+    <label>Main Text      <input type="color" id="custText"></label><br><br>
+    <label>Chart Area      <input type="color" id="custChartBg"></label><br><br>
+    <label>Chart Text      <input type="color" id="custChartText"></label><br><br>
+    <label>Defender Glow   <input type="color" id="custDefender"></label><br><br>
+    <button onclick="applyCustomTheme()" class="apply-custom-btn">Apply Custom</button>
+  </div>
+
+  <button onclick="document.getElementById('themePanel').style.display='none'" class="close-btn">
+    Close
+  </button>
+  </div>
