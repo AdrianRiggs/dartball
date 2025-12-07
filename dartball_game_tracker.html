@@ -1,6 +1,11 @@
  <!DOCTYPE html>
 <html lang="en">
 <head>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+  import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+</script>
+ 
 <script src="theme.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -887,6 +892,81 @@
     </div>
 
     <script>
+// Your Firebase config (paste it here)
+const firebaseConfig = {
+  apiKey: "AIzaSyAp3teE0EOa7iF69EIVNll7FSaFMRKJzEE",
+  authDomain: "dartball-4f29e.firebaseapp.com",
+  databaseURL: "https://dartball-4f29e-default-rtdb.firebaseio.com",
+  projectId: "dartball-4f29e",
+  storageBucket: "dartball-4f29e.firebasestorage.app",
+  messagingSenderId: "363609573700",
+  appId: "1:363609573700:web:2dd01042ada7a080feef11",
+  measurementId: "G-BPK57YE3WS"
+};
+
+// Initialize
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const gameRef = ref(db, 'dartball/currentGame');  // Where we store the live state
+
+// Game state snapshot (update these variable names to match YOUR code's vars – e.g., if you have 'teamAScore', use that)
+let gameState = {
+  inning: 1,  // Your current inning number
+  topBottom: 'top',  // 'top' or 'bottom'
+  scoreTeamA: 0,  // Total runs for Team A
+  scoreTeamB: 0,  // Total runs for Team B
+  outs: 0,  // Current outs (0-2)
+  bases: { first: false, second: false, third: false, home: false },  // true if occupied (for 1B/2B/3B/HR)
+  currentBatter: 'Player 1',  // Batter name or slot
+  currentDefender: 'Player 1 B',  // Defender slot
+  runsThisInning: 0,  // Runs in current inning
+  rbi: 0,  // Current RBI count (or total – adjust as needed)
+  homeruns: 0,  // Homerun count
+  lastPlay: '',  // e.g., "Green Hit - RBI"
+  inningScores: [  // Your 14-inning grid as array of objects
+    { a: 0, b: 0 }, { a: 0, b: 0 }, // ... up to 14 (fill with your grid data)
+    // Example: { a: '-', b: '2' } for empty/missing
+  ],
+  statsTeamA: { runs: 0, ab: 0, hits: 0, avg: 0, rbi: 0, errors: 0 },  // From your stats table
+  statsTeamB: { runs: 0, ab: 0, hits: 0, avg: 0, rbi: 0, errors: 0 }
+};
+
+// Function to push to Firebase (call this after updates)
+function pushToLive() {
+  // Quick snapshot – replace with your actual vars, e.g., gameState.scoreTeamA = teamAScore;
+  gameState.inning = currentInning;  // Pseudo: your var names
+  gameState.scoreTeamA = teamAScore;
+  // ... add lines for outs, bases.first = isFirstBaseLit, etc. (5-10 lines total)
+  set(gameRef, gameState).then(() => console.log('Live scores pushed!')).catch(console.error);
+}
+
+// Hook into your buttons (add these lines to your existing event listeners)
+// Example for "CONFIRM PLAY" button (find your onclick or addEventListener):
+document.getElementById('confirmPlay').addEventListener('click', function() {
+  // Your existing logic stays the same (e.g., light bases, add RBI if run scores)
+  // ... your code ...
+  pushToLive();  // Add this one line at the end
+});
+
+// For "UNDO":
+document.getElementById('undo').addEventListener('click', function() {
+  // Your existing undo logic
+  // ... your code ...
+  pushToLive();  // Add this
+});
+
+// For "NEW INNING":
+document.getElementById('newInning').addEventListener('click', function() {
+  // Your existing logic
+  // ... your code ...
+  pushToLive();  // Add this
+});
+
+// Initial push on load
+window.addEventListener('load', pushToLive);
+
+
+     
     let teamA = [];
     let teamB = [];
     let currentGame = 1;
@@ -1968,4 +2048,5 @@ function calculateTeamStats() {
 </script>
 </body>
 </html>
+
 
