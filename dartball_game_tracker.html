@@ -1,11 +1,6 @@
  <!DOCTYPE html>
 <html lang="en">
 <head>
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-  import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
-</script>
- 
 <script src="theme.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -892,85 +887,6 @@
     </div>
 
     <script>
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-  import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
-
-  // ———————— FIREBASE LIVE SYNC — FINAL VERSION ————————
-  const firebaseConfig = {
-    apiKey: "AIzaSyAp3teE0EOa7iF69EIVNll7FSaFMRKJzEE",
-    authDomain: "dartball-4f29e.firebaseapp.com",
-    databaseURL: "https://dartball-4f29e-default-rtdb.firebaseio.com",
-    projectId: "dartball-4f29e",
-    storageBucket: "dartball-4f29e.firebasestorage.app",
-    messagingSenderId: "363609573700",
-    appId: "1:363609573700:web:2dd01042ada7a080feef11"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const gameRef = ref(db, 'dartball/currentGame');
-
-  function pushToLive() {
-    const home = currentState.leadoff === 'B' ? 'B' : 'A';
-    const away = home === 'A' ? 'B' : 'A';
-
-    const state = {
-      inning: currentState.inning,
-      topBottom: currentState.battingTeam === currentState.leadoff ? 'top' : 'bottom',
-      scoreHome: home === 'A' ? currentState.teamA : currentState.teamB,
-      scoreAway: away === 'A' ? currentState.teamA : currentState.teamB,
-      outs: currentState.outs,
-      bases: {
-        first: currentState.bases.first.occupied,
-        second: currentState.bases.second.occupied,
-        third: currentState.bases.third.occupied
-      },
-      basePlayers: {
-        first: currentState.bases.first.player || '',
-        second: currentState.bases.second.player || '',
-        third: currentState.bases.third.player || ''
-      },
-      batterName: document.getElementById('batter-name')?.textContent.trim() || '',
-      defenderName: document.getElementById('defender-name')?.textContent.trim() || '',
-      runsThisInning: currentState.halfInningRuns || 0,
-      runnersScored: document.getElementById('runners-scored')?.innerHTML || '—',
-      rbiCredit: document.getElementById('rbi-credit')?.innerHTML || '—',
-      inningScores: currentState.inningScores.map((s, i) => ({
-        inning: i + 1,
-        home: home === 'A' ? s.teamA : s.teamB,
-        away: away === 'A' ? s.teamA : s.teamB
-      }))
-    };
-
-    set(gameRef, state).catch(err => console.error('Push failed:', err));
-  }
-
-  // Hook into every action that changes the scoreboard
-  const originalConfirmPlay = confirmPlay;
-  confirmPlay = function() { originalConfirmPlay(); pushToLive(); };
-
-  const originalEndHalfInning = endHalfInning;
-  endHalfInning = function() { originalEndHalfInning(); pushToLive(); };
-
-  const originalConfirmUndo = confirmUndo;
-  confirmUndo = function() { originalConfirmUndo(); pushToLive(); };
-
-  const originalConfirmClear = confirmClear;
-  confirmClear = function() { originalConfirmClear(); pushToLive(); };
-
-  const originalConfirmSwitchSides = confirmSwitchSides;
-  confirmSwitchSides = function(t) { originalConfirmSwitchSides(t); pushToLive(); };
-
-  // Load lineup FIRST, then push to phones
-  window.addEventListener('load', () => {
-    loadGameState();                                    // ← restores saved lineup + game
-    if (teamA.length === 0 && teamB.length === 0) loadLineup();  // ← fallback if no saved game
-    calculateTeamStats();
-    setTimeout(pushToLive, 1500);                       // ← now safely push live
-  });
-</script>
-     
     let teamA = [];
     let teamB = [];
     let currentGame = 1;
@@ -2049,17 +1965,6 @@ function calculateTeamStats() {
         hrEl.innerHTML = allHR.map((name, i) => `${i+1}. ${escapeHtml(name)}`).join('<br>');
     }
 }
-window.addEventListener('load', () => {
-  loadGameState();           // restores saved game + lineup
-  if (teamA.length === 0 && teamB.length === 0) loadLineup();  // fallback
-  calculateTeamStats();
-  setTimeout(pushToLive, 1500);   // now safely push to seniors' phones
-});
-     
 </script>
 </body>
 </html>
-
-
-
-
