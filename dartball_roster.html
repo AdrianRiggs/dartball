@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dartball Master Roster</title>
+     <script src="theme.js" defer></script>
+     <script src="dartball_master_roster.json" defer></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -33,9 +35,9 @@
         .sort-btns button { padding: 8px 16px; background: #8e44ad; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; }
 
         .player-list { max-height: 420px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; padding: 6px; }
-        .player { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; background: #ecf0f1; margin: 4px 0; padding: 9px 12px; border-radius: 6px; font-size: 1.05em; }
+        .player { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; background: #ecf0f1; margin: 4px 0; padding: 9px 12px; border-radius: 6px; font-size: 3em; }
         .player:hover { background: #dfe6e9; }
-        .player input { border: none; background: transparent; font-size: 1em; padding: 2px 4px; outline: none; }
+        .player input { border: none; background: transparent; font-size: 2em; padding: 2px 4px; outline: none;font-weight: 600;   }
         .player input:focus { background: #fff; border-bottom: 1px solid #3498db; }
         .delete-btn { background: #e74c3c; color: #fff; border: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-weight: bold; }
 
@@ -149,25 +151,46 @@
     </div>
 
     <script>
-        const ROSTER_KEY = 'dartball_master_roster';
-        let players = [];
+ const ROSTER_KEY = 'dartball_master_roster';
+    let players = [];
 
-        window.onload = loadRoster;
-
-        function loadRoster() {
-            const saved = localStorage.getItem(ROSTER_KEY);
-            if (saved) {
-                try {
-                    players = JSON.parse(saved).map(p => ({
-                        first: (p.first || '').trim(),
-                        last: (p.last || '').trim()
-                    })).filter(p => p.first && p.last);
-                } catch (e) {
-                    console.error('Load failed', e);
-                }
+    /* ========== AUTO-LOAD DEFAULT ROSTER ON FIRST VISIT ========== */
+    window.addEventListener('load', () => {
+        // 1. Try to load any previously saved roster (user edits win)
+        const saved = localStorage.getItem(ROSTER_KEY);
+        if (saved) {
+            try {
+                players = JSON.parse(saved)
+                    .map(p => ({ first: (p.first || '').trim(), last: (p.last || '').trim() }))
+                    .filter(p => p.first && p.last);
+                renderPlayers();
+                console.log('Loaded saved roster from browser');
+                return; // ← we’re done if the user already has data
+            } catch (e) {
+                console.error('Corrupted saved data', e);
             }
-            renderPlayers();
         }
+
+        // 2. No saved data → auto-load the default JSON file
+        fetch('dartball_master_roster.json')
+            .then(r => {
+                if (!r.ok) throw new Error('not found');
+                return r.json();
+            })
+            .then(data => {
+                players = data
+                    .map(p => ({ first: (p.first || '').trim(), last: (p.last || '').trim() }))
+                    .filter(p => p.first && p.last);
+
+                renderPlayers();
+                saveRoster(); // save it so next visit is instant
+                console.log('Auto-loaded dartball_master_roster.json (' + players.length + ' players)');
+            })
+            .catch(err => {
+                console.log('No dartball_master_roster.json found – starting with empty roster');
+                renderPlayers(); // show empty list
+            });
+    });
 
         function saveRoster() {
             localStorage.setItem(ROSTER_KEY, JSON.stringify(players));
