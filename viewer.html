@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Dartball Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 20px; font-size: 24px; }
+        .high-vis { background: #000 !important; color: #ffff00 !important; font-size: 48px !important; }  /* Yellow on black */
+        .bases { font-size: 36px; }
+        button { padding: 15px; font-size: 24px; margin: 10px; background: #333; color: #fff; border: none; border-radius: 5px; }
+    </style>
+    <!-- Same Firebase imports as scorekeeper -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+        const firebaseConfig = YOUR_FIREBASE_CONFIG;
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const scoreRef = ref(db, 'dartball/gameState');
+
+        let gameState = {};
+
+        // Auto-listen and update every change
+        onValue(scoreRef, (snapshot) => {
+            gameState = snapshot.val() || {};
+            updateDisplay();
+            speakUpdate();  // Optional voice
+        });
+
+        function updateDisplay() {
+            document.getElementById('inning').textContent = (gameState.topBottom === 'top' ? 'Top ' : 'Bottom ') + gameState.inning;
+            document.getElementById('scoreHome').textContent = gameState.scoreHome || 0;
+            // ... update bases, outs, etc. (e.g., bases.first ? '●' : '○')
+        }
+
+        // High-vis mode for eye issues
+        function toggleHighVis() {
+            document.body.classList.toggle('high-vis');
+        }
+
+        // Speak aloud (uses browser TTS)
+        function speakUpdate() {
+            const msg = `Inning ${gameState.inning}, score ${gameState.scoreHome} to ${gameState.scoreVisitor}`;
+            const utterance = new SpeechSynthesisUtterance(msg);
+            speechSynthesis.speak(utterance);
+        }
+    </script>
+</head>
+<body>
+    <h1>Live Dartball</h1>
+    <button onclick="toggleHighVis()">High Visibility Mode</button>
+    <button onclick="speakUpdate()">Speak Score</button>
+    <div class="scoreboard">
+        <h2 id="inning">Top 1st</h2>
+        <p id="scores">Home: <span id="scoreHome">0</span> | Visitor: <span id="scoreVisitor">0</span></p>
+        <div class="bases" id="bases">1st ○ 2nd ○ 3rd ○</div>
+        <p id="status">Outs: 0 | Up: A1</p>
+        <p id="lastPlay"></p>
+    </div>
+</body>
+</html>
