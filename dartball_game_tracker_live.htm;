@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test - Scorekeeper</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f0f0f0; text-align: center; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        button:hover { background: #218838; }
+        #status { font-size: 24px; color: green; margin: 20px; }
+    </style>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+  import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAp3teE0EOa7iF69EIVNll7FSaFMRKJzEE",
+    authDomain: "dartball-4f29e.firebaseapp.com",
+    databaseURL: "https://dartball-4f29e-default-rtdb.firebaseio.com",
+    projectId: "dartball-4f29e",
+    storageBucket: "dartball-4f29e.firebasestorage.app",
+    messagingSenderId: "363609573700",
+    appId: "1:363609573700:web:2dd01042ada7a080feef11"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  // ← THIS WAS WRONG BEFORE — fixed now
+  const testRef = ref(db, 'testConnection');   // ← simple root-level node
+
+  function pushTestScore(score) {
+    set(testRef, { score: score, timestamp: Date.now(), message: 'Connection working!' })
+      .then(() => {
+        document.getElementById('status').textContent = `Pushed ${score} — check phone!`;
+        document.getElementById('status').style.color = 'green';
+      })
+      .catch(err => {
+        document.getElementById('status').textContent = `Error: ${err.message}`;
+        document.getElementById('status').style.color = 'red';
+      });
+  }
+
+
+<script src="theme.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dartball Manager</title>
+
+<style>
+      .body {
+        margin: 0;
+        padding: 20px;
+        background: #f5f5f5;
+        min-height: 100vh;
+        font-family: Arial, Helvetica, sans-serif;
+        /* ← Removed display:flex from body → normal vertical flow restored */
+    }
+
+    .score-board {
+        width: 100%;
+        max-width: 1600px;
+        margin: 0 auto 30px auto;   /* centers the whole scoreboard */
+    }
+
+.single-score-line {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr auto;  /* 5 columns */
+    align-items: baseline;
+    justify-items: center;
+    gap: 20px;
+    padding: 15px 32px;
+    background: white;
+    color: black;
+    font-size: 1.9rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Force Game dropdown to stick to the left edge */
+.single-score-line > .game-dropdown {
+    justify-self: start;
+    font-size: 1.8rem  
+}
+
+/* Force inning to stick to the right edge */
+.single-score-line > .inning-section {
+    justify-self: end;
+}
+
+/* Teams stay naturally left/right of center */
+.team-a   { justify-self: start;   text-align:center; }
+.team-b   { justify-self: end;  text-align: left; }
+
+/* Outs is in the exact center column */
+.outs-section {
+    grid-column: 3; /* the middle column */
+}
+
+/* Styling tweaks */
+.team-label   { font-size: 2.2rem;  }
+.score        { font-size: 3.8rem; font-weight: bold; }
+.outs-label   { font-size: 2.2rem; margin-right: 8px; }
+.outs-count   { font-size: 3.5rem; font-weight: bold; text-decoration: underline; }
+
+.inning-section {
+    font-size: 2.2rem;
+    font-weight: bold;
+    text-align: right;
+}
+#inning {
+    font-size: 2rem;
+    margin-left: 8px;
+}
+
+/* Mobile fallback — stack everything nicely */
+@media (max-width: 840px) {
+    .single-score-line {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        text-align: center;
+        padding: 16px;
+    }
+    .game-dropdown,
+    .inning-section,
+    .team-a,
+    .team-b,
+    .outs-section {
+        justify-self: center;
+        text-align: center;
+    }
+    .team-a, .team-b { justify-self: center; text-align: justify; }
+}
+
+   .player-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 0;
+        font-size: clamp(1rem, 3.5vw, 3em);
+        font-weight: bold;
+        color: #222;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    /* … keep every single rule you had below this point exactly as-is … */
+    /* (all the .bases, .controls, .inning-chart, .modal, etc.) */
+
+        
+        .player-block {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 200px;
+        }
+        .player-name {
+            font-size: clamp(1.3rem, 5vw, 5em);
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .player-name.offense {
+            color: #04662a;
+        }
+        .player-name.defense {
+            color: #04662a;
+        }
+        .player-index {
+            font-size: 1em;
+            color: #888;
+            font-weight: normal;
+            margin-left: 6px;
+        }
+//* TEAM NAME OVALS — BIG, BOLD, SENIOR-FRIENDLY */
+.player-meta .team {
+    padding: 12px 28px !important;
+    font-size: 1.6rem !important;
+    font-weight: 900 !important;
+    border-radius: 999px !important;
+    min-width: 140px;
+    text-align: center;
+    display: inline-block;
+    background: rgba(255,255,255,0.2) !important;
+    border: 3px solid currentColor !important;
+    box-shadow: 0 0 12px rgba(255,255,255,0.4);
+}
+
+/* TEAM OVALS — EXACTLY SAME as Ball/Strike ovals */
+.team-oval {
+    background: #eef6ff !important;
+    color: #0b4d8a !important;
+    border: 1px solid #cfe6ff !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: inherit !important;
+    display: inline-block !important;
+}
+
+      
+        .player-name.active-player {
+            background: #2e8b57;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fff;
+        }
+       
+        
+        .meta-info {
+            background: #eef6ff;
+            color: #0b4d8a;
+            border: 1px solid #cfe6ff;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+/* BIGGER BASES — name inside, label below */
+.bases {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.base {
+    width: 120px;
+    height: 80px;
+    border-radius: 50%;
+    background: #ffc107;
+    border: 6px solid #e0a800;
+    position: relative;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 900;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* OCCUPIED BASE — bright green */
+.base.occupied {
+    background: #4ade80 !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.6) !important;
+}
+
+/* BASE LABEL (1B, 2B, 3B) — below the circle */
+.base::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: -34px;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: inherit;
+   
+}
+
+/* PLAYER NAME — inside the base */
+.base .player-label {
+    position: static !important;
+    font-size: 1.8rem !important;
+    font-weight:1000 !important;
+    color: black !important;
+    
+    margin: 4px 0 0 0;
+    text-align: center;
+    bottom: auto !important;
+}
+
+/* HOME PLATE — LOCKED, BEAUTIFUL, SENIOR-PERFECT */
+/* Home Plate — simple, same height as others */
+.base.home-plate {
+    width: 200px !important;
+    height: 80px !important;
+    border-radius: 20px !important;
+    background: #ffc107 !important;
+    border: 6px solid #e0a800 !important;
+}
+
+/* Green when runs scored this half-inning */
+.base.home-plate.has-runs {
+    background: #4ade80 !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 0 30px rgba(34,197,94,0.6) !important;
+}
+
+/* Run count inside Home Plate */
+.base.home-plate .run-count {
+    font-size: 3.5rem !important;
+    font-weight: 1000;
+    color: white;
+   
+}
+
+/* TWO SCORING LINES — regular names */
+.rbi-names {
+    font-weight: 700;  
+     font-size: 1.3rem              /* matches your gold HR names */
+    /* color comes from theme — leave it alone */
+}
+
+/* GOLD + PARENTHESES FOR HOME RUN HITTERS */
+.rbi-names .hr {
+    color: #ffeb3b !important;        /* gold */
+    font-weight: 700;
+     font-size: 1.3rem       /* same weight as regular names */
+    
+}
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .controls button {
+            padding: 14px 8px;
+            font-size: .9rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hit {
+            background: #28a745;
+            color: #fff;
+        }
+        .hit:hover {
+            background: #218838;
+        }
+        .out {
+            background: #dc3545;
+            color: #fff;
+        }
+        .out:hover {
+            background: #c82333;
+        }
+        .strike {
+            background: #6f42c1;
+            color: #fff;
+        }
+        .strike:hover {
+            background: #5a32a3;
+        }
+        .error {
+            background: #ff9800;
+            color: #fff;
+        }
+        .error:hover {
+            background: #e68a00;
+        }
+        .blue-btn {
+            background: #007bff;
+            color: #fff;
+        }
+        .blue-btn:hover {
+            background: #0056b3;
+        }
+        .yellow-btn {
+            background: #ffc107;
+            color: #000;
+        }
+        .yellow-btn:hover {
+            background: #e0a800;
+        }
+        .miss-btn {
+            background: #6c757d;
+            color: #fff;
+        }
+        .miss-btn:hover {
+            background: #545b62;
+        }
+        .ball-btn {
+            background: #6c757d;
+            color: #fff;
+        }
+        .ball-btn:hover {
+            background: #545b62;
+        }
+        .brown-btn {
+            background: #8B4513;
+            color: #fff;
+        }
+        .brown-btn:hover {
+            background: #654321;
+        }
+        .green-btn {
+            background: #28a745;
+            color: #fff;
+        }
+        .green-btn:hover {
+            background: #218838;
+        }
+        .action-btns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .reset {
+            background: #6c757d;
+            color: #fff;
+        }
+        .reset:hover {
+            background: #545b62;
+        }
+        .undo {
+            background: #ff9800;
+            color: #fff;
+        }
+        .undo:hover {
+            background: #e68a00;
+        }
+        .confirm {
+            background: #17a2b8;
+            color: #fff;
+            grid-column: span 3;
+            font-size: 1.3em;
+            font-weight: bold;
+            padding: 20px 10px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        .confirm:hover {
+            background: #138496;
+        }
+        .pending-play {
+            margin: 15px 0;
+            padding: 12px;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.3em;
+            text-align: center;
+            display: none;
+        }
+        .inning-chart {
+            margin: 20px 0;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.1);
+            overflow-x: auto;
+        }
+        .inning-chart table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .9em;
+        }
+        .inning-chart th, .inning-chart td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            min-width: 40px;
+        }
+        .inning-chart th {
+            background: #007bff;
+            color: #fff;
+        }
+        .inning-chart tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .links {
+            margin: 10px 0;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        .links a {
+            margin: 0 10px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 2px 10px rgba(0,0,0,.3);
+        }
+        .modal-content h3 {
+            margin-bottom: 10px;
+        }
+        .modal-content p {
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+        .modal-content button {
+            margin: 10px 5px;
+            padding: 12px 20px;
+            font-size: 1em;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .load-lineup, .edit-lineup {
+            background: #007bff;
+            color: #fff;
+            padding: 12px 24px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            min-width: 180px;
+            margin: 10px auto;
+            display: block;
+        }
+        .load-lineup:hover, .edit-lineup:hover {
+            background: #0056b3;
+        }
+        .game-select select {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #d6e0ef;
+            background: #fff;
+            font-size: 1em;
+        }
+        @media (max-width: 720px) {
+            .inning-header {
+                flex-direction: column;
+                white-space: normal;
+            }
+            .player-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .player-block {
+                align-items: flex-start;
+            }
+            .controls {
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            }
+            .modal-content {
+                max-width: 90%;
+            }
+        }
+
+@media (max-width: 720px) {
+    .single-score-line {
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        padding: 14px 12px;
+        font-size: 1.4rem !important;
+        text-align: center;
+    }
+    .team-label, .outs-label { font-size: 1.8rem !important; }
+    .score, .outs-count { font-size: 2.2rem !important; }
+    .inning-section { font-size: 1.3rem !important; }
+    .game-dropdown { font-size: 1.1rem; padding: 6px 8px; }
+}
+
+@media (max-width: 480px) {
+    .single-score-line {
+        font-size: 1.2rem !important;
+        gap: 8px 12px;
+    }
+    .team-label, .outs-label { font-size: 1.6rem !important; }
+    .score, .outs-count { font-size: 2rem !important; }
+
+    /* Make all buttons huge and easy to tap */
+    .controls button, .action-btns button, .confirm {
+        padding: 16px 10px !important;
+        font-size: 1rem !important;
+        min-height: 56px;
+    }
+    
+    /* Inning chart: stack columns on tiny screens */
+    .inning-chart table { font-size: 0.8rem; }
+    .inning-chart th, .inning-chart td { padding: 6px 4px; min-width: 32px; }
+}
+/* ——— OPERATOR-ONLY TEXT (always black, never theme-colored) ——— */
+/* All modal / nag screen text (alerts, undo, clear inning, new game, etc.) */
+/* Only the modal CONTENT (the white card) — white background + black text */
+.modal-content {
+    color: #000 !important;
+    background: #fff !important;
+}
+
+/* Modal title and message */
+.modal-content h3,
+.modal-content p {
+    color: #000 !important;
+}
+
+/* Modal buttons (Yes/No, OK, etc.) */
+.modal-content button {
+    color: #000 !important;
+    background: #f0f0f0 !important;
+    border: 2px solid #333 !important;
+}
+.modal-content button:hover {
+    background: #e0e0e0 !important;
+}
+
+/* Pending play banner */
+.pending-play {
+    color: #000 !important;
+    background: #fff3cd !important;
+    border-color: #ffeeba !important;
+}
+
+    </style>
+</head>
+<!-- Theme button + full popup (copy-paste exactly this block on EVERY page) -->
+<div style="position:fixed; bottom:15px; right:15px; z-index:9999;">
+  <button onclick="document.getElementById('themePanel').style.display='flex'"
+          style="padding:14px 22px; font-size:18px; background:#222; color:white; border:none; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.6); cursor:pointer;">
+    Theme
+  </button>
+</div>
+
+<div id="themePanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center;">
+  <div class="panel-inner">
+    <h2>Dartball Projector Theme</h2>
+
+    <button onclick="setTheme('midnight')"  class="tbtn" data-theme="midnight">Midnight Blue</button>
+    <button onclick="setTheme('forest')"    class="tbtn" data-theme="forest">Forest Green</button>
+    <button onclick="setTheme('charcoal')"  class="tbtn" data-theme="charcoal">Charcoal + Cream</button>
+    <button onclick="setTheme('retro')"     class="tbtn" data-theme="retro">Retro Purple</button>
+    <button onclick="clearTheme()"          class="tbtn">Revert to Original</button>
+
+    <button onclick="document.getElementById('cust').style.display='block'; this.style.display='none';"
+            class="tbtn custom-btn">Custom Colors</button>
+
+    <div id="cust" style="display:none; margin-top:20px;">
+      <label>Background     <input type="color" id="custBg"></label><br><br>
+      <label>Main Text      <input type="color" id="custText"></label><br><br>
+      <label>Chart Area      <input type="color" id="custChartBg"></label><br><br>
+      <label>Chart Text      <input type="color" id="custChartText"></label><br><br>
+      <label>Defender Glow   <input type="color" id="custDefender"></label><br><br>
+      <button onclick="applyCustomTheme()" class="apply-custom-btn">Apply Custom</button>
+    </div>
+
+    <button onclick="document.getElementById('themePanel').style.display='none'" class="close-btn">
+      Close
+    </button>
+  </div>
+</div>
+<body>
+
+    <div class="score-board">
+        <div class="single-score-line">
+
+            <!-- Game # dropdown -->
+            <select id="gameSelect" class="game-dropdown">
+                <option value="1">Game 1</option>
+                <option value="2">Game 2</option>
+                <option value="3">Game 3</option>
+                <!-- add more games here -->
+            </select>
+
+             <!-- Team A -->
+            <span class="team-a">
+                <span class="team-label">Team A</span>
+                <span class="score" id="teamA-score">5</span>
+            </span>
+            
+
+            <!-- Outs -->
+            <span class="outs-section">
+                <span class="outs-label">Outs</span>
+                <span class="outs-count" id="outs">2</span>
+            </span>
+            
+
+            <!-- Team B -->
+            <span class="team-b">
+                <span class="team-label">Team B</span>
+                <span class="score" id="teamB-score">3</span>
+            </span>
+          
+
+            <!-- Inning -->
+            <span class="inning-section">
+                <span id="half">Top</span>
+                <span id="inning">9</span>
+            </span>
+        </div>
+    </div>
+</div>
+        <div class="player-info">
+            <div class="player-block" id="offense-block">
+                <div>
+                    <span class="player-name" id="batter-name">Player</span>
+                    <span class="player-index"><span id="batter-index">1</span>/<span id="roster-size">3</span></span>
+                </div>
+                <div id="batter-meta" class="player-meta" aria-live="polite"></div>
+            </div>
+
+            <div class="player-block" id="defense-block">
+                <div>
+                    <span class="player-name" id="defender-name">Player</span>
+                    <span class="player-index"><span id="defender-index">1</span>/<span id="defender-roster-size">3</span></span>
+                </div>
+                <div id="defender-meta" class="player-meta" aria-live="polite"></div>
+            </div>
+        </div>
+
+</div>
+              <div class="bases">
+    <div class="base" id="first" data-label="1B">
+        <div class="player-label" id="first-player"></div>
+    </div>
+    <div class="base" id="second" data-label="2B">
+        <div class="player-label" id="second-player"></div>
+    </div>
+    <div class="base" id="third" data-label="3B">
+        <div class="player-label" id="third-player"></div>
+    </div>
+
+    <!-- HOME PLATE – now only shows the run count -->
+    <div class="base home-plate" id="home-plate" data-label="Runs Batted In">
+        <div class="player-label run-count" id="home-runs">0</div>
+    </div>
+</div>
+
+<!-- TWO LINES UNDER THE BASES – THIS IS YOUR NEW SCORING DISPLAY -->
+<div class="rbi-summary">
+    <div class="rbi-line">
+        <span class="rbi-label">Players crossing home:</span>
+        <span class="rbi-names" id="runners-scored">—</span>
+    </div>
+    <div class="rbi-line">
+        <span class="rbi-label">Players batting in runs (HR):</span>
+        <span class="rbi-names" id="rbi-credit">—</span>
+    </div>
+</div>
+        <div id="pending-play" class="pending-play"></div>
+
+        <div class="controls" id="batter-controls">
+            <button type="button" class="brown-btn" onclick="queuePlay('1st')">1st Base</button>
+            <button type="button" class="brown-btn" onclick="queuePlay('2nd')">2nd Base</button>
+            <button type="button" class="brown-btn" onclick="queuePlay('3rd')">3rd Base</button>
+            <button type="button" class="brown-btn" onclick="queuePlay('HR')">Homerun</button>
+            <button type="button" class="brown-btn" onclick="queuePlay('H&R')">Hit & Run</button>
+            <button type="button" class="ball-btn" onclick="queuePlay('Ball')">Ball</button>
+            <button type="button" class="green-btn" onclick="queuePlay('Green')">Green</button>
+            <button type="button" class="out" onclick="queuePlay('Red')">Red</button>
+            <button type="button" class="blue-btn" onclick="queuePlay('Blue')">Blue</button>
+            <button type="button" class="yellow-btn" onclick="queuePlay('Yellow')">Yellow</button>
+        </div>
+        <div class="controls" id="defender-controls" style="display: none;">
+            <button type="button" class="blue-btn" id="defender-blue-btn" onclick="queuePlay('DefenderBlue')">Blue</button>
+            <button type="button" class="yellow-btn" id="defender-yellow-btn" onclick="queuePlay('DefenderYellow')">Yellow</button>
+            <button type="button" class="miss-btn" id="defender-miss-btn" onclick="queuePlay('DefenderMiss')">Miss</button>
+        </div>
+
+        <div class="action-btns">
+            <button type="button" class="confirm" onclick="confirmPlay()">CONFIRM PLAY</button>
+        </div>
+
+        <div class="action-btns" style="margin-top: 15px; grid-template-columns: repeat(3, 1fr);">
+            <button type="button" class="undo" onclick="showUndoModal()">Undo Last</button>
+            <button type="button" class="reset" onclick="showClearModal()">Clear Inning</button>
+            <button type="button" onclick="prevBatter()">Prev Batter</button>
+            <button type="button" onclick="nextBatter()">Next Batter</button>
+            <button type="button" onclick="prevDefender()">Prev Defender</button>
+            <button type="button" onclick="nextDefender()">Next Defender</button>
+            <button type="button" class="reset" onclick="showResetModal()">New Game</button>
+            <button type="button" class="edit-lineup" onclick="editLineup()">Edit Lineup</button>
+            <button type="button" class="load-lineup" onclick="loadLineup()">Load Lineup</button>
+        </div>
+       
+    </div>
+
+    <div class="inning-chart">
+        <h3>Inning Scores</h3>
+        <table id="inning-scores">
+            <thead>
+                <tr>
+                    <th>Team</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th>
+                    <th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Team A</strong></td>
+                    <td id="teamA-1">-</td><td id="teamA-2">-</td><td id="teamA-3">-</td><td id="teamA-4">-</td>
+                    <td id="teamA-5">-</td><td id="teamA-6">-</td><td id="teamA-7">-</td><td id="teamA-8">-</td>
+                    <td id="teamA-9">-</td><td id="teamA-10">-</td><td id="teamA-11">-</td><td id="teamA-12">-</td>
+                    <td id="teamA-13">-</td><td id="teamA-14">-</td>
+                </tr>
+                <tr>
+                    <td><strong>Team B</strong></td>
+                    <td id="teamB-1">-</td><td id="teamB-2">-</td><td id="teamB-3">-</td><td id="teamB-4">-</td>
+                    <td id="teamB-5">-</td><td id="teamB-6">-</td><td id="teamB-7">-</td><td id="teamB-8">-</td>
+                    <td id="teamB-9">-</td><td id="teamB-10">-</td><td id="teamB-11">-</td><td id="teamB-12">-</td>
+                    <td id="teamB-13">-</td><td id="teamB-14">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+<div class="inning-chart" style="margin-top: 40px;">
+    <h3>Game Stats</h3>
+    <table id="team-stats-table">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Runs</th>
+                <th>AB</th>
+                <th>H</th>
+                <th>Avg</th>
+                <th>RBI</th>
+                <th>Def Att</th>
+                <th>PO</th>
+                <th>E</th>
+                <th>Def %</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Team A</strong></td>
+                <td id="stats-A-runs">0</td>
+                <td id="stats-A-ab">0</td>
+                <td id="stats-A-hits">0</td>
+                <td id="stats-A-avg">.000</td>
+                <td id="stats-A-rbi">0</td>
+                <td id="stats-A-defatt">0</td>
+                <td id="stats-A-po">0</td>
+                <td id="stats-A-err">0</td>
+                <td id="stats-A-defpct">.000</td>
+            </tr>
+            <tr>
+                <td><strong>Team B</strong></td>
+                <td id="stats-B-runs">0</td>
+                <td id="stats-B-ab">0</td>
+                <td id="stats-B-hits">0</td>
+                <td id="stats-B-avg">.000</td>
+                <td id="stats-B-rbi">0</td>
+                <td id="stats-B-defatt">0</td>
+                <td id="stats-B-po">0</td>
+                <td id="stats-B-err">0</td>
+                <td id="stats-B-defpct">.000</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+<!-- HOMERUN SECTION — now perfectly follows every theme -->
+<div style="margin-top: 20px; padding: 15px; border-radius: 10px;">
+    <h4>Homeruns</h4>
+    <div id="homerun-list">
+        None yet
+    </div>
+</div>
+</div>
+    <div class="links">
+        <a href="dartball_roster.html">Manage Roster</a> |
+        <a href="dartball_lineup.html" target="_blank">Build Lineup</a> |
+        <a href="dartball_plays_tracker.html">View Play Tracker</a> |
+        <a href="scoresheet.html">View Scoresheet</a> |
+        <a href="player_stats.html">View Player Stats</a>
+    </div>
+
+    <div id="clearModal" class="modal">
+        <div class="modal-content">
+            <h3>Clear Inning</h3>
+            <p>Reset this inning?</p>
+            <button type="button" class="confirm" onclick="confirmClear()">Yes</button>
+            <button type="button" class="reset" onclick="cancelClear()">No</button>
+        </div>
+    </div>
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <h3>New Game</h3>
+            <p>Start a new game?</p>
+            <button type="button" class="confirm" onclick="confirmReset()">Yes</button>
+            <button type="button" class="reset" onclick="cancelReset()">No</button>
+        </div>
+    </div>
+    <div id="newGameModal" class="modal">
+        <div class="modal-content">
+            <h3>New Game Options</h3>
+            <p>Choose an action:</p>
+            <button type="button" class="confirm" onclick="selectGameAction(1, 'start')">Start New Game 1</button>
+            <button type="button" class="confirm" onclick="selectGameAction(2, 'start')">Start New Game 2</button>
+            <button type="button" class="reset" onclick="selectGameAction(currentGame, 'reset')">Reset Current Game</button>
+            <button type="button" class="reset" onclick="cancelNewGame()">Cancel</button>
+        </div>
+    </div>
+    <div id="switchSidesModal" class="modal">
+        <div class="modal-content">
+            <h3>Choose Leadoff Team</h3>
+            <p>Should Team B bat first?</p>
+            <button type="button" class="confirm" onclick="confirmSwitchSides('B')">Yes</button>
+            <button type="button" class="reset" onclick="confirmSwitchSides('A')">No</button>
+        </div>
+    </div>
+    <div id="undoModal" class="modal">
+        <div class="modal-content">
+            <h3>Undo Last Play</h3>
+            <p id="undoMessage">Undo the last action?</p>
+            <button type="button" class="confirm" onclick="confirmUndo()">Yes</button>
+            <button type="button" class="reset" onclick="cancelUndo()">No</button>
+        </div>
+    </div>
+    <div id="alertModal" class="modal">
+        <div class="modal-content">
+            <h3>Notification</h3>
+            <p id="alertMessage"></p>
+            <button type="button" class="confirm" onclick="closeAlert()">OK</button>
+        </div>
+    </div>
+
+    <script>
+    let teamA = [];
+    let teamB = [];
+    let currentGame = 1;
+    let currentState = {
+        teamA: 0,
+        teamB: 0,
+        inning: 1,
+        battingTeam: 'A',
+        outs: 0,
+        bases: {
+            first: { occupied: false, player: '' },
+            second: { occupied: false, player: '' },
+            third: { occupied: false, player: '' }
+        },
+        batterIndex: 0,
+        defenderIndex: 0,
+        inningScores: Array(14).fill().map(() => ({ teamA: null, teamB: null })),
+        plays: [],
+        currentBalls: {},
+        currentStrikes: {},
+        leadoff: 'A',
+        halfInningRuns: 0,
+        awaitingDefender: false,
+        batterDart: null
+    };
+    let inningStartState = JSON.parse(JSON.stringify(currentState));
+    let stateHistory = [];
+    let pendingPlay = null;
+    const batterIndex = { A: 0, B: 0 };
+    const defenderIndex = { A: 0, B: 0 };
+    const ACTIVE_GAME_KEY = 'dartballActiveGame';   // ← ADD THIS LINE
+    const LIVE_KEYS = ['current_game_lineup', 'current_lineup'];
+    const EDITING_FLAG = 'dartball_editing_lineup';
+    const PLAYS_KEY = () => `dartball_game${currentGame}_plays`;
+    const STATE_KEY = () => `dartball_game${currentGame}_state`;
+    const COMBINED_PLAYS_KEY = 'dartball_combined_plays';
+
+function applyTheme(themeName) {
+  if (!THEMEABLE_PAGES.includes(currentPage)) return;
+  const s = getStyles(themeName);
+
+  // === BASIC PAGE COLORS ===
+  document.body.style.background = s.bg;
+  document.body.style.color = s.text;
+
+  const scoreLine = document.querySelector('.single-score-line');
+  if (scoreLine) { scoreLine.style.background = s.bg; scoreLine.style.color = s.text; }
+
+  document.querySelectorAll('.inning-chart, .inning-chart table, .inning-chart th, .inning-chart td, #team-stats-table, #homerun-list, #homerun-list ~ div')
+    .forEach(el => {
+      el.style.background = s.chartBg;
+      el.style.color = s.chartText;
+      el.style.borderColor = s.text + '40';
+    });
+
+  const dropdown = document.getElementById('gameSelect');
+  if (dropdown) { dropdown.style.background = s.bg; dropdown.style.color = s.text; }
+
+  document.querySelectorAll('.action-btns button:not(.confirm):not(.brown-btn):not(.blue-btn):not(.yellow-btn):not(.green-btn):not(.out):not(.ball-btn)')
+    .forEach(btn => {
+      btn.style.background = s.text + '30';
+      btn.style.color = s.bg;
+      btn.style.border = '2px solid ' + s.text;
+    });
+  document.querySelectorAll('.action-btns button').forEach(btn => {
+    btn.style.color = s.chartText;
+    btn.style.borderColor = s.chartText;
+  });
+
+  document.querySelectorAll('.player-name.defense').forEach(el => el.style.color = s.defender);
+
+  document.querySelectorAll('.list').forEach(list => {
+    list.style.background = `linear-gradient(to bottom, ${s.bg}dd, ${s.bg})`;
+    list.style.borderColor = s.text + '40';
+  });
+
+  document.querySelectorAll('.player, .panel h3').forEach(el => {
+    el.style.background = `${s.bg}ee`;
+    el.style.border = `1px solid ${s.text}40`;
+    el.style.boxShadow = `0 2px 8px rgba(0,0,0,0.2)`;
+    el.style.color = s.text;
+    el.style.backdropFilter = 'blur(4px)';
+  });
+
+  document.querySelectorAll('.add-form button, .sort-btns button, .btn, .import-options button')
+    .forEach(btn => { btn.style.background = s.text + 'cc'; btn.style.color = s.bg; });
+
+  // === PLAYER NAMES: Always theme color (roster + lineup) ===
+  document.querySelectorAll('.player input, .player-name, .lineup-player, .roster-player').forEach(el => {
+    el.style.color = s.text;
+    el.style.caretColor = s.text;
+  });
+
+  // === DELETE BUTTONS: Theme-aware (darker accent) ===
+  document.querySelectorAll('.delete-btn, .del-btn').forEach(btn => {
+    const baseColor = s.text.replace('#', '');
+    const r = parseInt(baseColor.substr(0,2),16);
+    const g = parseInt(baseColor.substr(2,2),16);
+    const b = parseInt(baseColor.substr(4,2),16);
+    const darker = '#' + 
+      Math.max(0, r-70).toString(16).padStart(2,'0') +
+      Math.max(0, g-70).toString(16).padStart(2,'0') +
+      Math.max(0, b-70).toString(16).padStart(2,'0');
+
+    btn.style.background = darker;
+    btn.style.color = s.text;
+    btn.style.border = '2px solid ' + s.text;
+    btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+  });
+
+  // === PLAYER INPUT FIELDS: Subtle background + border ===
+  document.querySelectorAll('.player input').forEach(input => {
+    input.style.background = s.bg + 'cc';
+    input.style.border = '1px solid ' + s.text + '40';
+    input.style.borderRadius = '6px';
+  });
+
+  // === ELIMINATE WHITE FLASH on new/dragged names (THE FIX YOU WANTED) ===
+  const css = `
+    .player input,
+    .player-name,
+    .lineup-player,
+    .drag-player,
+    [draggable="true"],
+    .player,
+    .lineup-slot > div,
+    .roster-player {
+      color: ${s.text} !important;
+      background-color: ${s.bg}dd !important;
+      caret-color: ${s.text} !important;
+      transition: all 0.15s ease !important;
+    }
+    .player input {
+      border: 1px solid ${s.text}40 !important;
+      border-radius: 6px !important;
+    }
+  `;
+
+  let fixStyle = document.getElementById('no-white-flash-fix');
+  if (!fixStyle) {
+    fixStyle = document.createElement('style');
+    fixStyle.id = 'no-white-flash-fix';
+    document.head.appendChild(fixStyle);
+  }
+  fixStyle.textContent = css;
+
+  // === SAVE THEME CHOICE ===
+  localStorage.setItem('dartball_projector_theme', themeName);
+}
+
+    function teamSize(t) { return t === 'A' ? teamA.length : teamB.length; }
+    function normalizePlayerEntry(x) {
+        if (!x) return 'Player';
+        if (typeof x === 'string') return x.trim();
+        if (typeof x === 'object') {
+            if (x.first || x.last) return `${(x.first || '').trim()} ${(x.last || '').trim()}`.trim();
+            if (x.name) return x.name.trim();
+            if (x.id) return String(x.id).trim();
+        }
+        return String(x).trim();
+    }
+    function escapeHtml(s) {
+        return String(s || '')
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function hasRunners() {
+    return currentState.bases.first.occupied ||
+           currentState.bases.second.occupied ||
+           currentState.bases.third.occupied;
+}
+
+    function loadGameState() {
+    if (resumeFromActiveGame()) return;  // ← This checks first!
+
+    // Your normal saved game loading
+    try {
+        const saved = localStorage.getItem(STATE_KEY());
+        if (saved) {
+            currentState = JSON.parse(saved);
+            batterIndex.A = currentState.batterIndex || 0;
+            batterIndex.B = currentState.batterIndex || 0;
+            defenderIndex.A = currentState.defenderIndex || 0;
+            defenderIndex.B = currentState.defenderIndex || 0;
+        } else {
+            resetGameState();
+        }
+        const plays = localStorage.getItem(PLAYS_KEY());
+        if (plays) currentState.plays = JSON.parse(plays);
+    } catch (e) {
+        console.error(e);
+        resetGameState();
+    }
+    updateDisplay();
+}
+   function resetGameState() {
+    // Safely clear scoring display even if DOM not ready yet
+    const el1 = document.getElementById('scoring-runners');
+    const el2 = document.getElementById('runners-scored');
+    const el3 = document.getElementById('rbi-credit');
+    if (el1) el1.textContent = '';
+    if (el2) el2.innerHTML = '—';
+    if (el3) el3.innerHTML = '—';
+
+    delete currentState.runnersScoredThisHalf;
+    delete currentState.rbiThisHalf;
+
+    // … rest of your reset code unchanged …
+             currentState = {
+            teamA: 0, teamB: 0, inning: 1, battingTeam: 'A', outs: 0,
+            bases: { first: { occupied: false, player: '' }, second: { occupied: false, player: '' }, third: { occupied: false, player: '' } },
+            batterIndex: 0, defenderIndex: 0,
+            inningScores: Array(14).fill().map(() => ({ teamA: null, teamB: null })),
+            plays: [], currentBalls: {}, currentStrikes: {}, leadoff: 'A',
+            halfInningRuns: 0, awaitingDefender: false, batterDart: null
+        };
+        inningStartState = JSON.parse(JSON.stringify(currentState));
+        batterIndex.A = 0; batterIndex.B = 0;
+        defenderIndex.A = 0; defenderIndex.B = 0;
+        stateHistory = [];
+        pendingPlay = null;
+    }
+
+    function savePlays() {
+        try {
+            localStorage.setItem(PLAYS_KEY(), JSON.stringify(currentState.plays));
+            updateCombinedPlays();
+        } catch (e) {
+            console.error('Failed to save plays:', e);
+        }
+    }
+
+    function updateCombinedPlays() {
+        try {
+            const game1Plays = JSON.parse(localStorage.getItem('dartball_game1_plays') || '[]');
+            const game2Plays = JSON.parse(localStorage.getItem('dartball_game2_plays') || '[]');
+            const combinedPlays = [
+                ...game1Plays.map(p => ({ ...p, game: 1 })),
+                ...game2Plays.map(p => ({ ...p, game: 2 }))
+            ];
+            localStorage.setItem(COMBINED_PLAYS_KEY, JSON.stringify(combinedPlays));
+        } catch (e) {
+            console.error('Failed to update combined plays:', e);
+        }
+    }
+
+    function registerPlayer(team, playerName) {
+        try {
+            const key = 'dartball_game_players';
+            let registry = localStorage.getItem(key);
+            registry = registry ? JSON.parse(registry) : { teamA: [], teamB: [] };
+            const name = normalizePlayerEntry(playerName);
+            if (team === 'A' && !registry.teamA.includes(name)) registry.teamA.push(name);
+            if (team === 'B' && !registry.teamB.includes(name)) registry.teamB.push(name);
+            localStorage.setItem(key, JSON.stringify(registry));
+        } catch (e) {
+            console.error('Failed to register player:', e);
+        }
+    }
+
+    function updateDisplay() {
+        const home = currentState.leadoff === 'B' ? 'B' : 'A';
+        const away = home === 'A' ? 'B' : 'A';
+
+        document.getElementById('teamA-score').textContent = home === 'A' ? currentState.teamA : currentState.teamB;
+        document.getElementById('teamB-score').textContent = away === 'A' ? currentState.teamA : currentState.teamB;
+        document.querySelector('.team-a .team-label').textContent = home === 'A' ? 'Team A' : 'Team B';
+        document.querySelector('.team-b .team-label').textContent = home === 'A' ? 'Team B' : 'Team A';
+        document.getElementById('inning').textContent = currentState.inning;
+        document.getElementById('outs').textContent = currentState.outs;
+        document.getElementById('half').textContent = currentState.battingTeam === currentState.leadoff ? 'Top' : 'Bottom';
+
+        const batR = currentState.battingTeam === 'A' ? teamA : teamB;
+        const defR = currentState.battingTeam === 'A' ? teamB : teamA;
+
+        const batterName = batR[currentState.batterIndex] ? normalizePlayerEntry(batR[currentState.batterIndex]) : 'Player';
+        const defenderName = defR[currentState.defenderIndex] ? normalizePlayerEntry(defR[currentState.defenderIndex]) : 'Player';
+
+        document.getElementById('batter-name').textContent = batterName;
+        document.getElementById('defender-name').textContent = defenderName;
+        document.getElementById('batter-name').className = `player-name offense${currentState.awaitingDefender ? '' : ' active-player'}`;
+        document.getElementById('defender-name').className = `player-name defense${currentState.awaitingDefender ? ' active-player' : ''}`;
+
+        document.getElementById('batter-index').textContent = currentState.batterIndex + 1;
+        document.getElementById('roster-size').textContent = batR.length || '-';
+        document.getElementById('defender-index').textContent = currentState.defenderIndex + 1;
+        document.getElementById('defender-roster-size').textContent = defR.length || '-';
+
+        ['first', 'second', 'third'].forEach(b => {
+            const el = document.getElementById(b);
+            el.classList.toggle('occupied', currentState.bases[b].occupied);
+            document.getElementById(`${b}-player`).textContent = currentState.bases[b].occupied ? currentState.bases[b].player || '' : '';
+        });
+
+        const runLabel = document.getElementById('home-runs');
+        runLabel.textContent = currentState.halfInningRuns || 0;
+        document.getElementById('home-plate').classList.toggle('scored', currentState.outs >= 3 && currentState.halfInningRuns > 0);
+
+
+const balls = Number(currentState.currentBalls[currentState.batterIndex] || 0);
+const strikes = Number(currentState.currentStrikes[currentState.batterIndex] || 0);
+
+document.getElementById('batter-meta').innerHTML = `<span class="meta-info team-oval">${currentState.battingTeam} – At Bat</span>
+    <span class="meta-info">Ball ${balls}/4</span>
+    <span class="meta-info">Strike ${strikes}/3</span>`;
+
+document.getElementById('defender-meta').innerHTML = `<span class="meta-info team-oval">${currentState.battingTeam === 'A' ? 'B' : 'A'} – On Defense</span>`;
+
+        const pp = document.getElementById('pending-play');
+        if (pendingPlay) {
+            let txt = pendingPlay.type;
+            if (txt.startsWith('Defender')) txt = txt.replace('Defender', 'Defender: ');
+            else txt = `Batter: ${txt}`;
+            pp.textContent = `Pending: ${txt.replace(/([A-Z])/g, ' $1').trim()}`;
+            pp.style.display = 'block';
+        } else pp.style.display = 'none';
+
+        document.getElementById('batter-controls').style.display = currentState.awaitingDefender ? 'none' : 'grid';
+        document.getElementById('defender-controls').style.display = currentState.awaitingDefender ? 'grid' : 'none';
+
+       updateInningChart();
+    calculateTeamStats();   // ← NEW
+
+    }
+
+    function getHomeTeam() { return currentState.leadoff === 'B' ? 'B' : 'A'; }
+    function getAwayTeam() { return getHomeTeam() === 'A' ? 'B' : 'A'; }
+
+    function updateInningChart() {
+        const home = getHomeTeam();
+        const away = getAwayTeam();
+        for (let i = 0; i < 14; i++) {
+            const homeScore = home === 'A' ? currentState.inningScores[i].teamA : currentState.inningScores[i].teamB;
+            const awayScore = away === 'A' ? currentState.inningScores[i].teamA : currentState.inningScores[i].teamB;
+            document.getElementById(`teamA-${i+1}`).textContent = homeScore !== null ? homeScore : '-';
+            document.getElementById(`teamB-${i+1}`).textContent = awayScore !== null ? awayScore : '-';
+        }
+        document.querySelector('.inning-chart tbody tr:nth-child(1) td strong').textContent = `Team ${home}`;
+        document.querySelector('.inning-chart tbody tr:nth-child(2) td strong').textContent = `Team ${away}`;
+    }
+
+    function saveState() {
+        stateHistory.push(JSON.parse(JSON.stringify(currentState)));
+        if (stateHistory.length > 20) stateHistory.shift();
+        try { localStorage.setItem(STATE_KEY(), JSON.stringify(currentState)); } catch (e) {}
+    }
+
+    function showUndoModal() {
+        if (!stateHistory.length) return showAlert('Nothing to undo');
+        const lastPlay = currentState.plays[currentState.plays.length - 1];
+        const preview = lastPlay ? `${lastPlay.playType} — ${lastPlay.player}` : 'Previous state';
+        document.getElementById('undoMessage').textContent = `Undo: ${preview}?`;
+        document.getElementById('undoModal').style.display = 'flex';
+    }
+
+    function confirmUndo() {
+        if (stateHistory.length) {
+            currentState = stateHistory.pop();
+            pendingPlay = null;
+            savePlays();
+            updateDisplay();
+            showAlert('Undone!');
+        }
+        document.getElementById('undoModal').style.display = 'none';
+    }
+
+    function cancelUndo() { document.getElementById('undoModal').style.display = 'none'; }
+
+    function queuePlay(t) {
+        if (currentState.awaitingDefender && !t.startsWith('Defender')) return showAlert('Select defender play first');
+        if (!currentState.awaitingDefender && t.startsWith('Defender')) return showAlert('Select batter play first');
+        pendingPlay = { type: t };
+        updateDisplay();
+    }
+function confirmPlay() {
+    if (!pendingPlay) return showAlert('No play selected');
+    if (!teamA.length && !teamB.length) return showAlert('Load lineup first');
+    saveState();
+
+    const batTeam = currentState.battingTeam;
+    const batR = batTeam === 'A' ? teamA : teamB;
+    const defR = batTeam === 'A' ? teamB : teamA;
+    const batter = normalizePlayerEntry(batR[currentState.batterIndex]) || 'Player';
+    const defender = normalizePlayerEntry(defR[currentState.defenderIndex]) || 'Player';
+    const play = pendingPlay.type;
+
+    let advanceBatterFlag = false;
+    let runsScored = 0;
+    let rbi = 0;
+    const oldBases = JSON.parse(JSON.stringify(currentState.bases));
+
+    // ——————————————————————— HITS ———————————————————————
+    if (['1st', '2nd', '3rd', 'HR', 'H&R'].includes(play)) {
+        const basesToMove = play === '1st' ? 1 : play === '2nd' || play === 'H&R' ? 2 : play === '3rd' ? 3 : 4;
+        if (oldBases.third.occupied && basesToMove >= 1) rbi++;
+        if (oldBases.second.occupied && basesToMove >= 2) rbi++;
+        if (oldBases.first.occupied && basesToMove >= 3) rbi++;
+        if (play === 'HR') rbi++;
+
+        let newBases = { first: { occupied: false, player: '' }, second: { occupied: false, player: '' }, third: { occupied: false, player: '' } };
+
+        if (oldBases.third.occupied) { if (basesToMove >= 1) runsScored++; else newBases.third = oldBases.third; }
+        if (oldBases.second.occupied) { if (basesToMove >= 2) runsScored++; else if (basesToMove === 1) newBases.third = oldBases.second; else newBases.second = oldBases.second; }
+        if (oldBases.first.occupied) { if (basesToMove >= 3) runsScored++; else if (basesToMove >= 2) newBases.third = oldBases.first; else if (basesToMove === 1) newBases.second = oldBases.first; else newBases.first = oldBases.first; }
+
+        if (play === 'HR') runsScored++;
+        else if (play === '3rd') newBases.third = { occupied: true, player: batter };
+        else if (play === '2nd' || play === 'H&R') newBases.second = { occupied: true, player: batter };
+        else if (play === '1st') newBases.first = { occupied: true, player: batter };
+
+        currentState.bases = newBases;
+        advanceBatterFlag = true;
+
+        currentState.plays.push({
+            inning: currentState.inning, team: batTeam, player: batter,
+            playType: play === 'HR' ? '4' : play === '3rd' ? '3' : play === 'H&R' ? '5' : play === '2nd' ? '2' : '1',
+            rbi: rbi, runs: runsScored, timestamp: Date.now()
+        });
+
+        currentState.halfInningRuns += runsScored;
+        currentState[batTeam === 'A' ? 'teamA' : 'teamB'] += runsScored;
+    }
+
+    // ——————————————————————— BALL / WALK ———————————————————————
+    else if (play === 'Ball') {
+        currentState.currentBalls[currentState.batterIndex] = (currentState.currentBalls[currentState.batterIndex] || 0) + 1;
+        if (currentState.currentBalls[currentState.batterIndex] >= 4) {
+            let newBases = JSON.parse(JSON.stringify(oldBases));
+            runsScored = oldBases.third.occupied ? 1 : 0;
+            if (newBases.first.occupied) { if (newBases.second.occupied) newBases.third = newBases.second; newBases.second = newBases.first; }
+            newBases.first = { occupied: true, player: batter };
+            currentState.bases = newBases;
+            advanceBatterFlag = true;
+            currentState.plays.push({ inning: currentState.inning, team: batTeam, player: batter, playType: 'BB', rbi: runsScored, runs: runsScored, timestamp: Date.now() });
+            currentState.currentBalls[currentState.batterIndex] = 0;
+            currentState.currentStrikes[currentState.batterIndex] = 0;
+        }
+    }
+
+    // ——————————————————————— GREEN / RED ———————————————————————
+    else if (play === 'Green') {
+        currentState.currentStrikes[currentState.batterIndex] = (currentState.currentStrikes[currentState.batterIndex] || 0) + 1;
+        if (currentState.currentStrikes[currentState.batterIndex] >= 3) {
+            currentState.outs++;
+            advanceBatterFlag = true;
+            currentState.currentBalls[currentState.batterIndex] = 0;
+            currentState.currentStrikes[currentState.batterIndex] = 0;
+            currentState.plays.push({ inning: currentState.inning, team: batTeam, player: batter, playType: 'SKO', timestamp: Date.now() });
+        }
+    }
+    else if (play === 'Red') {
+        currentState.outs++;
+        advanceBatterFlag = true;
+        currentState.currentBalls[currentState.batterIndex] = 0;
+        currentState.currentStrikes[currentState.batterIndex] = 0;
+        currentState.plays.push({ inning: currentState.inning, team: batTeam, player: batter, playType: 'O', timestamp: Date.now() });
+    }
+
+  
+// ——————————————————————— BATTER THROWS BLUE OR YELLOW ———————————————————————
+else if (play === 'Blue' || play === 'Yellow') {
+    currentState.batterDart = play;
+    const strikes = currentState.currentStrikes[currentState.batterIndex] || 0;
+    const hasRunnersNow = hasRunners();
+
+    // ONLY FPO: Yellow + 2 strikes + runners + <2 outs → defender gets a chance
+    if (play === 'Yellow' && strikes >= 2 && hasRunnersNow && currentState.outs < 2) {
+        currentState.awaitingDefender = true;
+        currentState.pendingFPO = true;
+    }
+    // ALL OTHER 3rd strikes (Blue any time, Yellow with no runners, or 2 outs) → IMMEDIATE OUT + ADVANCE BATTER
+    else if (strikes >= 2) {
+        currentState.outs++;
+        advanceBatterFlag = true;                    // ← THIS WAS MISSING!
+        currentState.currentBalls[currentState.batterIndex] = 0;
+        currentState.currentStrikes[currentState.batterIndex] = 0;
+        currentState.plays.push({ 
+            inning: currentState.inning, 
+            team: batTeam, 
+            player: batter, 
+            playType: 'SKO', 
+            timestamp: Date.now() 
+        });
+    }
+    // Normal hit (less than 2 strikes) → wait for defender
+    else {
+        currentState.awaitingDefender = true;
+        currentState.pendingFPO = false;
+    }
+
+    pendingPlay = null;
+    updateDisplay();
+}
+   
+            // ——————————————————————— DEFENDER THROWS ———————————————————————
+         else if (play.startsWith('Defender')) {
+        const defDart = play.replace('Defender', '');
+        let defCode = '';
+        const isFPO = currentState.pendingFPO;
+        const canDoubleOut = hasRunners() && currentState.outs < 2;
+
+        // === DEFENDER HITS (Blue or Yellow) ===
+        if (defDart === 'Blue' || defDart === 'Yellow') {
+            if (currentState.batterDart === 'Yellow' && defDart === 'Yellow' && canDoubleOut) {
+                // FORCE DOUBLE PLAY (only on Yellow vs Yellow with runners & <2 outs)
+                currentState.outs += 2;
+
+                // Remove forced runner (for scoring display cleanup)
+                if (currentState.bases.third.occupied) {
+                    currentState.bases.third = { occupied: false, player: '' };
+                } else if (currentState.bases.second.occupied) {
+                    currentState.bases.second = { occupied: false, player: '' };
+                } else if (currentState.bases.first.occupied) {
+                    currentState.bases.first = { occupied: false, player: '' };
+                }
+
+                defCode = isFPO ? 'FPO' : 'DPO';
+            } else {
+                // Normal putout
+                currentState.outs++;
+                defCode = 'SPO';
+            }
+            advanceBatterFlag = true;
+            currentState.currentBalls[currentState.batterIndex] = 0;
+            currentState.currentStrikes[currentState.batterIndex] = 0;
+
+            // Only record SKO if batter actually had 2 strikes before defender hit
+            if ((currentState.currentStrikes[currentState.batterIndex] || 0) >= 2) {
+                currentState.plays.push({
+                    inning: currentState.inning,
+                    team: batTeam,
+                    player: batter,
+                    playType: 'SKO',
+                    timestamp: Date.now()
+                });
+            }
+        }
+
+        // === DEFENDER MISS → ERROR + STRIKE ON BATTER (except don't double-count in FPO) ===
+        else if (defDart === 'Miss') {
+            if (!isFPO) {
+                currentState.currentStrikes[currentState.batterIndex] = 
+                    (currentState.currentStrikes[currentState.batterIndex] || 0) + 1;
+            }
+
+            if (currentState.currentStrikes[currentState.batterIndex] >= 3) {
+                currentState.outs++;
+                advanceBatterFlag = true;
+                currentState.currentBalls[currentState.batterIndex] = 0;
+                currentState.currentStrikes[currentState.batterIndex] = 0;
+                defCode = 'SKO';
+
+                currentState.plays.push({
+                    inning: currentState.inning,
+                    team: batTeam,
+                    player: batter,
+                    playType: 'SKO',
+                    timestamp: Date.now()
+                });
+            } else {
+                defCode = 'E';  // Defender error, no out
+            }
+        }
+
+        // ————— RECORD THE DEFENDER PLAY —————
+        currentState.plays.push({
+            inning: currentState.inning,
+            team: batTeam,
+            player: batter,
+            defender: defender,
+            playType: currentState.batterDart,
+            defenderPlayType: defCode || undefined,
+            note: (isFPO && defDart === 'Yellow' && canDoubleOut) ? 'Force Double Play' : undefined,
+            timestamp: Date.now()
+        });
+
+        advanceDefender();
+        currentState.awaitingDefender = false;
+        currentState.pendingFPO = false;
+        currentState.batterDart = null;
+    }
+    // ——————————————————————— RBI / SCORING DISPLAY ———————————————————————
+        // ——————————————————————— SCORING DISPLAY — FIXED VERSION ———————————————————————
+    if (runsScored > 0 || play === 'HR' || play === 'BB') {
+        if (!currentState.runnersScoredThisHalf) currentState.runnersScoredThisHalf = [];
+        if (!currentState.rbiThisHalf) currentState.rbiThisHalf = [];
+
+        // === 1. Determine who actually crossed home on THIS PLAY ===
+        const scorersThisPlay = [];
+
+        // Home Run: everyone on base + batter scores
+        if (play === 'HR') {
+            if (oldBases.first.occupied)  scorersThisPlay.push(oldBases.first.player);
+            if (oldBases.second.occupied) scorersThisPlay.push(oldBases.second.player);
+            if (oldBases.third.occupied)  scorersThisPlay.push(oldBases.third.player);
+            scorersThisPlay.push(batter); // batter scores last
+        }
+        // Walk/Balk with bases loaded → runner from 3B scores
+        else if (play === 'BB' && oldBases.third.occupied) {
+            scorersThisPlay.push(oldBases.third.player);
+        }
+        // Regular hit: push runners from farthest to closest
+        else if (['1st', '2nd', '3rd', 'H&R'].includes(play)) {
+            const basesHit = play === '1st' ? 1 : play === '2nd' || play === 'H&R' ? 2 : 3;
+
+            // Always check 3rd → home first
+            if (oldBases.third.occupied && basesHit >= 1) scorersThisPlay.push(oldBases.third.player);
+            if (oldBases.second.occupied && basesHit >= 2) scorersThisPlay.push(oldBases.second.player);
+            if (oldBases.first.occupied  && basesHit >= 3) scorersThisPlay.push(oldBases.first.player);
+        }
+
+        // === 2. Add them to the half-inning list (preserve order) ===
+        scorersThisPlay.forEach(p => {
+            if (p && !currentState.runnersScoredThisHalf.includes(p)) {
+                currentState.runnersScoredThisHalf.push(p);
+            }
+        });
+
+        // === 3. Credit RBI to batter (except unearned on BB) ===
+        if (runsScored > 0 && ['1st','2nd','3rd','HR','H&R'].includes(play)) {
+            if (!currentState.rbiThisHalf.includes(batter)) {
+                currentState.rbiThisHalf.push(batter);
+            }
+        }
+
+        // === 4. Update the two on-screen lines ===
+        const hrHittersThisInning = currentState.plays
+            .filter(p => p.playType === '4' && p.inning === currentState.inning && p.team === batTeam)
+            .map(p => p.player);
+
+        const formatNames = (arr) => {
+            if (!arr || arr.length === 0) return '—';
+            return arr
+                .map(name => hrHittersThisInning.includes(name)
+                    ? `<span class="hr">(${name})</span>`
+                    : escapeHtml(name)
+                )
+                .join(' - ');
+        };
+
+        document.getElementById('runners-scored').innerHTML = formatNames(currentState.runnersScoredThisHalf);
+        document.getElementById('rbi-credit').innerHTML     = formatNames(currentState.rbiThisHalf);
+
+        // Light up home plate if anyone scored this half-inning
+        if (currentState.halfInningRuns > 0) {
+            document.getElementById('home-plate').classList.add('has-runs');
+        }
+    }
+
+        // ——————————————————————— FINAL CLEANUP ———————————————————————
+    const isThirdOut = (currentState.outs + (advanceBatterFlag ? 1 : 0)) >= 3;
+
+    // Always advance the batter if he reached base or made an out
+    if (advanceBatterFlag) {
+        advanceBatter();
+    }
+
+    // Now check if this play caused the 3rd out
+    if (currentState.outs >= 3) {
+        endHalfInning();
+    }
+
+    savePlays();
+    pendingPlay = null;
+    updateDisplay();
+}
+
+    function endHalfInning() {
+    const idx = currentState.inning - 1;
+    const teamJustBatted = currentState.battingTeam;
+    const isTop = teamJustBatted === currentState.leadoff;
+    const home = getHomeTeam();
+
+    // Record runs for the half-inning that just ended
+    if (isTop) {
+        currentState.inningScores[idx][home === 'A' ? 'teamA' : 'teamB'] = currentState.halfInningRuns;
+    } else {
+        currentState.inningScores[idx][home === 'A' ? 'teamB' : 'teamA'] = currentState.halfInningRuns;
+    }
+
+    // Clear half-inning tracking
+    delete currentState.runnersScoredThisHalf;
+    delete currentState.rbiThisHalf;
+
+    // Reset everything for the new half-inning
+    currentState.outs = 0;
+    currentState.halfInningRuns = 0;
+    currentState.bases = {
+        first:  { occupied: false, player: '' },
+        second: { occupied: false, player: '' },
+        third:  { occupied: false, player: '' }
+    };
+    currentState.currentBalls = {};
+    currentState.currentStrikes = {};
+
+    // SWITCH SIDES
+    currentState.battingTeam = currentState.battingTeam === 'A' ? 'B' : 'A';
+
+    // Go to next inning when the original leadoff team comes up again
+    if (currentState.battingTeam === currentState.leadoff) {
+        currentState.inning++;
+    }
+
+    // THIS IS THE CORRECT LINE — advanceBatter() already updated batterIndex[]
+    currentState.batterIndex   = batterIndex[currentState.battingTeam];
+    currentState.defenderIndex = defenderIndex[currentState.battingTeam === 'A' ? 'B' : 'A'];
+
+    // Clean up defender state
+    currentState.awaitingDefender = false;
+    currentState.batterDart = null;
+
+    // Reset on-screen run displays
+    document.getElementById('runners-scored').innerHTML = '—';
+    document.getElementById('rbi-credit').innerHTML     = '—';
+    document.getElementById('home-runs').textContent    = '0';
+    document.getElementById('home-plate').classList.remove('has-runs');
+
+    savePlays();
+    updateDisplay();
+}
+
+  function advanceBatter() {
+    const team = currentState.battingTeam;
+    const size = teamSize(team);
+    if (size === 0) return;
+
+    batterIndex[team] = (batterIndex[team] + 1) % size;
+    currentState.batterIndex = batterIndex[team];  // ← CRITICAL: update BEFORE reset
+
+    currentState.currentBalls[currentState.batterIndex] = 0;
+    currentState.currentStrikes[currentState.batterIndex] = 0;
+}
+
+    function nextBatter() { saveState(); advanceBatter(); pendingPlay = null; updateDisplay(); }
+    function prevBatter() {
+        saveState();
+        const team = currentState.battingTeam;
+        const size = teamSize(team);
+        if (size === 0) return;
+        batterIndex[team] = (batterIndex[team] - 1 + size) % size;
+        currentState.batterIndex = batterIndex[team];
+        pendingPlay = null;
+        updateDisplay();
+    }
+    function advanceDefender() {
+        const defTeam = currentState.battingTeam === 'A' ? 'B' : 'A';
+        const size = teamSize(defTeam);
+        if (size === 0) return;
+        defenderIndex[defTeam] = (defenderIndex[defTeam] + 1) % size;
+        currentState.defenderIndex = defenderIndex[defTeam];
+    }
+    function nextDefender() { saveState(); advanceDefender(); updateDisplay(); }
+    function prevDefender() {
+        saveState();
+        const defTeam = currentState.battingTeam === 'A' ? 'B' : 'A';
+        const size = teamSize(defTeam);
+        if (size === 0) return;
+        defenderIndex[defTeam] = (defenderIndex[defTeam] - 1 + size) % size;
+        currentState.defenderIndex = defenderIndex[defTeam];
+        updateDisplay();
+    }
+
+    // Rest of your functions (modals, lineup, etc.) remain unchanged...
+    function showClearModal() { document.getElementById('clearModal').style.display = 'flex'; }
+    function confirmClear() {
+        saveState();
+        currentState.outs = currentState.bases = currentState.currentBalls = currentState.currentStrikes = {};
+        currentState.halfInningRuns = 0; currentState.awaitingDefender = false; currentState.batterDart = null;
+        delete currentState.runnersScoredThisHalf;
+        delete currentState.rbiThisHalf;
+        pendingPlay = null;
+        updateDisplay();
+        document.getElementById('clearModal').style.display = 'none';
+        showAlert('Inning cleared');
+    }
+    function cancelClear() { document.getElementById('clearModal').style.display = 'none'; }
+    function showResetModal() { document.getElementById('resetModal').style.display = 'flex'; }
+    function confirmReset() {
+    localStorage.removeItem(ACTIVE_GAME_KEY);  // ← Clears any old resume data
+
+    document.getElementById('resetModal').style.display = 'none';
+    document.getElementById('newGameModal').style.display = 'flex';
+}
+    function selectGameAction(g, a) {
+    if (a === 'reset' && !confirm(`Reset Game ${g}?`)) return;
+    currentGame = g;
+    document.getElementById('gameSelect').value = g;
+    document.getElementById('newGameModal').style.display = 'none';
+    document.getElementById('switchSidesModal').style.display = 'flex';
+}
+    function confirmSwitchSides(t) {
+    // DO NOT call resetGameState() here anymore!
+    // Instead, just set who bats first and initialize cleanly
+
+    currentState.leadoff = t;
+    currentState.battingTeam = t;         // first batter is from this team
+    currentState.inning = 1;
+    currentState.outs = 0;
+    currentState.halfInningRuns = 0;
+    currentState.bases = {
+        first:  { occupied: false, player: '' },
+        second: { occupied: false, player: '' },
+        third:  { occupied: false, player: '' }
+    };
+    currentState.currentBalls = {};
+    currentState.currentStrikes = {};
+    currentState.awaitingDefender = false;
+    currentState.batterDart = null;
+
+    // Clear plays and scores for true new game
+    currentState.plays = [];
+    currentState.teamA = 0;
+    currentState.teamB = 0;
+    currentState.inningScores = Array(14).fill().map(() => ({ teamA: null, teamB: null }));
+    delete currentState.runnersScoredThisHalf;
+    delete currentState.rbiThisHalf;
+
+
+    // Reset indices safely
+    batterIndex.A = 0;
+    batterIndex.B = 0;
+    defenderIndex.A = 0;
+    defenderIndex.B = 0;
+    currentState.batterIndex = 0;
+    currentState.defenderIndex = 0;
+
+    // Clear the two scoring lines
+    const clearLine = el => { if (document.getElementById(el)) document.getElementById(el).innerHTML = '—'; };
+    clearLine('runners-scored');
+    clearLine('rbi-credit');
+
+    // Remove old saved plays/state for this game
+    try {
+        localStorage.removeItem(PLAYS_KEY());
+        localStorage.removeItem(STATE_KEY());
+        updateCombinedPlays();
+    } catch (e) {}
+
+    // Final update
+    updateDisplay();
+    document.getElementById('switchSidesModal').style.display = 'none';
+    showAlert(`New Game ${currentGame} – Team ${t} bats first`);
+}
+    function cancelNewGame() { document.getElementById('newGameModal').style.display = 'none'; }
+    function cancelReset() { document.getElementById('resetModal').style.display = 'none'; }
+    function showAlert(m) {
+        document.getElementById('alertMessage').textContent = m;
+        document.getElementById('alertModal').style.display = 'flex';
+    }
+    function closeAlert() { document.getElementById('alertModal').style.display = 'none'; }
+
+   function editLineup() {
+    // Save the EXACT current game state before editing lineup
+    const save = {
+        teamA: teamA.map(p => ({...p})),
+        teamB: teamB.map(p => ({...p})),
+        batterA: batterIndex.A,
+        batterB: batterIndex.B,
+        defenderA: defenderIndex.A,
+        defenderB: defenderIndex.B,
+        leadoff: currentState.leadoff,
+        battingTeam: currentState.battingTeam,
+        inning: currentState.inning,
+        outs: currentState.outs,
+        halfInningRuns: currentState.halfInningRuns,
+        bases: JSON.parse(JSON.stringify(currentState.bases)),
+        scoreA: currentState.teamA,
+        scoreB: currentState.teamB,
+        inningScores: currentState.inningScores.map(s => ({...s})),
+        currentBalls: {...currentState.currentBalls},
+        currentStrikes: {...currentState.currentStrikes},
+        plays: currentState.plays.slice()
+    };
+    localStorage.setItem(ACTIVE_GAME_KEY, JSON.stringify(save));
+    window.open('dartball_lineup.html?editing=true', '_blank');
+}
+// RESUME FROM LINEUP EDIT — THIS IS THE MAGIC
+function resumeFromActiveGame() {
+    const data = localStorage.getItem(ACTIVE_GAME_KEY);
+    if (!data) return false;
+
+    try {
+        const s = JSON.parse(data);
+
+        // Restore lineups
+        teamA = s.teamA || [];
+        teamB = s.teamB || [];
+
+        // Restore indices safely (clamp if player was removed)
+        batterIndex.A   = Math.min(s.batterA   || 0, Math.max(0, teamA.length - 1));
+        batterIndex.B   = Math.min(s.batterB   || 0, Math.max(0, teamB.length - 1));
+        defenderIndex.A = Math.min(s.defenderA || 0, Math.max(0, teamA.length - 1));
+        defenderIndex.B = Math.min(s.defenderB || 0, Math.max(0, teamB.length - 1));
+
+        // Restore all game state
+        Object.assign(currentState, {
+            leadoff: s.leadoff || 'A',
+            battingTeam: s.battingTeam || 'A',
+            inning: s.inning || 1,
+            outs: s.outs || 0,
+            halfInningRuns: s.halfInningRuns || 0,
+            bases: s.bases || {first:{occupied:false,player:''}, second:{occupied:false,player:''}, third:{occupied:false,player:''}},
+            teamA: s.scoreA || 0,
+            teamB: s.scoreB || 0,
+            inningScores: s.inningScores || Array(14).fill().map(()=>({teamA:null,teamB:null})),
+            currentBalls: s.currentBalls || {},
+            currentStrikes: s.currentStrikes || {},
+            plays: s.plays || []
+        });
+
+       
+        currentState.defenderIndex = defenderIndex[currentState.battingTeam === 'A' ? 'B' : 'A'];
+
+        localStorage.removeItem(ACTIVE_GAME_KEY);
+        updateDisplay();
+        showAlert('Lineup updated — game resumed exactly where you left off!');
+        return true;
+    } catch (e) {
+        console.error('Resume failed:', e);
+        localStorage.removeItem(ACTIVE_GAME_KEY);
+        showAlert('Error resuming game.');
+        return false;
+    }
+}
+
+
+    function parseStoredLiveLineup(raw) {
+        if (!raw) return null;
+        let obj;
+        try { obj = JSON.parse(raw); } catch { return null; }
+        const norm = arr => Array.isArray(arr) ? arr.map(normalizePlayerEntry) : [];
+        return {
+            teamA: norm(obj.teamA || obj.team_a || []),
+            teamB: norm(obj.teamB || obj.team_b || []),
+            leadoff: obj.leadoff || obj.leadOff || 'A',
+            gameNumber: obj.gameNumber
+        };
+    }
+
+    function applyLiveLineup(l) {
+        if (!l) return;
+        teamA = (l.teamA || []).slice();
+        teamB = (l.teamB || []).slice();
+        batterIndex.A = batterIndex.B = defenderIndex.A = defenderIndex.B = 0;
+        currentState.leadoff = l.leadoff === 'B' ? 'B' : 'A';
+        currentState.battingTeam = currentState.inning === 1 ? currentState.leadoff : currentState.battingTeam;
+        currentState.bases = { first: { occupied: false, player: '' }, second: { occupied: false, player: '' }, third: { occupied: false, player: '' } };
+        currentState.currentBalls = {}; currentState.currentStrikes = {}; currentState.halfInningRuns = 0;
+        currentState.awaitingDefender = false; currentState.batterDart = null;
+        currentState.batterIndex = batterIndex[currentState.battingTeam];
+        currentState.defenderIndex = defenderIndex[currentState.battingTeam === 'A' ? 'B' : 'A'];
+        updateDisplay();
+        try { localStorage.removeItem(EDITING_FLAG); } catch (e) {}
+    }
+
+    function loadLineup() {
+        let saved = null;
+        for (const k of LIVE_KEYS) {
+            try { saved = localStorage.getItem(k); if (saved) break; } catch (e) {}
+        }
+        if (!saved) return showAlert('No lineup found.');
+        const live = parseStoredLiveLineup(saved);
+        if (!live || (!live.teamA.length && !live.teamB.length)) return showAlert('Invalid lineup.');
+        if (live.gameNumber && Number(live.gameNumber) !== currentGame) {
+            if (!confirm(`Lineup is for Game ${live.gameNumber}. Load anyway?`)) return;
+        }
+        applyLiveLineup(live);
+        showAlert(`Lineup loaded for Game ${currentGame}`);
+    }
+
+    document.getElementById('gameSelect').addEventListener('change', e => {
+        const newGame = Number(e.target.value);
+        const hasData = localStorage.getItem(`dartball_game${newGame}_plays`) || localStorage.getItem(`dartball_game${newGame}_state`);
+        if (hasData && !confirm(`Game ${newGame} has data. Load it?`)) {
+            e.target.value = currentGame;
+            return;
+        }
+        currentGame = newGame;
+        loadGameState();
+    });
+// ——— PRE-LOAD TEST LINEUPS (DELETE WHEN DONE) ———
+teamA = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Wilson"];
+teamB = ["Anderson", "Taylor", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Moore"];
+
+currentState.leadoff = 'A';
+currentState.battingTeam = 'A';
+batterIndex.A = batterIndex.B = defenderIndex.A = defenderIndex.B = 0;
+currentState.batterIndex = 0;
+currentState.defenderIndex = 0;
+
+updateDisplay();
+// ——— END TEST BLOCK ———
+    window.onload = () => {
+    loadGameState();
+    calculateTeamStats();   // ensures stats show even on fresh load/resume
+};
+
+// =======================
+// LIVE TEAM & PLAYER STATS
+// =======================
+
+function calculateTeamStats() {
+    const stats = {
+        A: { runs: 0, ab: 0, hits: 0, rbi: 0, defAttempts: 0, putouts: 0, errors: 0, hrs: [] },
+        B: { runs: 0, ab: 0, hits: 0, rbi: 0, defAttempts: 0, putouts: 0, errors: 0, hrs: [] }
+    };
+
+    currentState.plays.forEach(p => {
+        const team = p.team;
+
+        // Runs scored in this play
+        if (p.runs) stats[team].runs += p.runs;
+
+        // At-bats & hits
+        if (p.atBat || ['1','2','3','4','5','BB','O','SKO','SPO','DPO'].includes(p.playType)) {
+            stats[team].ab++;
+            if (['1','2','3','4','5','BB'].includes(p.playType)) stats[team].hits++;
+        }
+
+        // RBI
+        if (p.rbi) stats[team].rbi += p.rbi;
+
+        // Defense (only when there is a defender play)
+        if (p.defenderPlayType) {
+            const defTeam = team === 'A' ? 'B' : 'A';
+            stats[defTeam].defAttempts++;
+           if (['SPO','DPO','FPO'].includes(p.defenderPlayType)) {
+    stats[defTeam].putouts += (p.defenderPlayType === 'FPO' || p.defenderPlayType === 'DPO') ? 1 : 1;}
+            if (p.defenderPlayType === 'E') stats[defTeam].errors++;
+        }
+
+        // Homeruns
+        if (p.playType === '4') {
+            stats[team].hrs.push(p.player);
+        }
+    });
+
+    // Update Team A row
+    document.getElementById('stats-A-runs').textContent = stats.A.runs;
+    document.getElementById('stats-A-ab').textContent = stats.A.ab;
+    document.getElementById('stats-A-hits').textContent = stats.A.hits;
+    document.getElementById('stats-A-rbi').textContent = stats.A.rbi;
+    document.getElementById('stats-A-defatt').textContent = stats.A.defAttempts;
+    document.getElementById('stats-A-po').textContent = stats.A.putouts;
+    document.getElementById('stats-A-err').textContent = stats.A.errors;
+
+    const avgA = stats.A.ab > 0 ? (stats.A.hits / stats.A.ab) : 0;
+    const defPctA = stats.A.defAttempts > 0 ? (stats.A.putouts / stats.A.defAttempts) : 0;
+    document.getElementById('stats-A-avg').textContent = avgA.toFixed(3).replace(/^0/, '');
+    document.getElementById('stats-A-defpct').textContent = defPctA.toFixed(3).replace(/^0/, '');
+
+    // Update Team B row
+    document.getElementById("stats-B-runs").textContent = stats.B.runs;
+    document.getElementById('stats-B-ab').textContent = stats.B.ab;
+    document.getElementById('stats-B-hits').textContent = stats.B.hits;
+    document.getElementById('stats-B-rbi').textContent = stats.B.rbi;
+    document.getElementById('stats-B-defatt').textContent = stats.B.defAttempts;
+    document.getElementById('stats-B-po').textContent = stats.B.putouts;
+    document.getElementById('stats-B-err').textContent = stats.B.errors;
+
+     const avgB = stats.B.ab > 0 ? (stats.B.hits / stats.B.ab) : 0;
+    const defPctB = stats.B.defAttempts > 0 ? (stats.B.putouts / stats.B.defAttempts) : 0;
+    document.getElementById('stats-B-avg').textContent = avgB.toFixed(3).replace(/^0/, '');
+    document.getElementById('stats-B-defpct').textContent = defPctB.toFixed(3).replace(/^0/, '');
+
+    // Homerun list
+    const allHR = [...stats.A.hrs, ...stats.B.hrs];
+    const hrEl = document.getElementById('homerun-list');
+    if (allHR.length === 0) {
+        hrEl.textContent = 'None yet';
+    } else {
+        hrEl.innerHTML = allHR.map((name, i) => `${i+1}. ${escapeHtml(name)}`).join('<br>');
+    }
+}
+</script>
+</body>
+</html>
