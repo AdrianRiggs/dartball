@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test - Viewer</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #000; color: #fff; text-align: center; font-size: 48px; }
+        #score { font-size: 120px; color: #ff0; margin: 20px; }
+        #message { font-size: 32px; color: #0f0; }
+        button { padding: 15px 30px; font-size: 24px; background: #0066cc; color: white; border: none; border-radius: 8px; cursor: pointer; margin: 10px; }
+        .highvis { background: #000 !important; color: #ff0 !important; font-size: 72px !important; }
+    </style>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+        const firebaseConfig = { /* Same as above - copy-paste the exact object from test_keeper.html */ };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const testRef = ref(db, 'dartball/testConnection');
+
+        onValue(testRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.getElementById('score').textContent = data.score;
+                document.getElementById('message').textContent = data.message + ' (Updated: ' + new Date(data.timestamp).toLocaleTimeString() + ')';
+            }
+        });
+
+        function toggleHighVis() {
+            document.body.classList.toggle('highvis');
+        }
+    </script>
+</head>
+<body>
+    <h1>Live Test Score</h1>
+    <button onclick="toggleHighVis()">High Visibility Mode</button>
+    <div id="score">0</div>
+    <div id="message">Waiting for connection...</div>
+</body>
+</html>
