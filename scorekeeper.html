@@ -12,16 +12,23 @@
         input { font-size: 18px; padding: 5px; }
     </style>
     <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getDatabase, ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+  <script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+  import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
-        // Paste your firebaseConfig from Step 1 here
-        const firebaseConfig = YOUR_FIREBASE_CONFIG;  // e.g., { apiKey: "...", ... }
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const scoreRef = ref(db, 'dartball/gameState');  // Our live data spot
+  const firebaseConfig = {
+    apiKey: "AIzaSyAp3teE0EOa7iF69EIVNll7FSaFMRKJzEE",
+    authDomain: "dartball-4f29e.firebaseapp.com",
+    databaseURL: "https://dartball-4f29e-default-rtdb.firebaseio.com",
+    projectId: "dartball-4f29e",
+    storageBucket: "dartball-4f29e.firebasestorage.app",
+    messagingSenderId: "363609573700",
+    appId: "1:363609573700:web:2dd01042ada7a080feef11"
+  };
 
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const testRef = ref(db, 'testConnection');   // ← THIS LINE WAS WRONG BEFORE — now fixed
         // Game state (build on your existing roster/lineup – example basics)
         let gameState = {
             inning: 1,
