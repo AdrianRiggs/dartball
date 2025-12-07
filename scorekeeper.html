@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dartball Scorekeeper - Live</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+        .scoreboard { background: white; padding: 20px; border-radius: 10px; text-align: center; }
+        button { padding: 10px 20px; margin: 5px; font-size: 18px; }
+        .bases { font-size: 24px; margin: 10px; }
+        input { font-size: 18px; padding: 5px; }
+    </style>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getDatabase, ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+        // Paste your firebaseConfig from Step 1 here
+        const firebaseConfig = YOUR_FIREBASE_CONFIG;  // e.g., { apiKey: "...", ... }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const scoreRef = ref(db, 'dartball/gameState');  // Our live data spot
+
+        // Game state (build on your existing roster/lineup – example basics)
+        let gameState = {
+            inning: 1,
+            topBottom: 'top',  // 'top' or 'bottom'
+            scoreHome: 0,
+            scoreVisitor: 0,
+            outs: 0,
+            bases: { first: false, second: false, third: false },
+            currentBatter: 'A1',  // From your lineup
+            currentDefender: 'B1',
+            runsThisInning: 0,
+            lastPlay: '',
+            // Add RBI, runs, etc. as needed
+        };
+
+        // Save state to Firebase (happens on every update)
+        function saveState() {
+            set(scoreRef, gameState).then(() => console.log('Pushed to live!'));
+        }
+
+        // Example buttons – expand with your plays (hit, out, etc.)
+        function updateScore(type, value) {
+            if (type === 'run') gameState[type + (gameState.topBottom === 'top' ? 'Home' : 'Visitor')] += value;
+            // Add logic for bases, outs, advance batter/defender, RBI calc
+            saveState();  // Pushes instantly
+        }
+
+        // Load initial from your roster if needed (stub)
+        function loadFromRoster() {
+            // Pull from localStorage or your manager logic
+            saveState();
+        }
+
+        // Initialize
+        window.onload = () => {
+            loadFromRoster();
+            // Listen for changes (in case multi-scorekeepers, rare)
+            onValue(scoreRef, (snapshot) => { gameState = snapshot.val() || gameState; });
+        };
+    </script>
+</head>
+<body>
+    <h1>Dartball Scorekeeper</h1>
+    <div class="scoreboard">
+        <h2 id="inning">Top 1st</h2>
+        <p>Home: <span id="scoreHome">0</span> | Visitor: <span id="scoreVisitor">0</span></p>
+        <div class="bases">Bases: 1st ◇ 2nd ◇ 3rd ◇</div>
+        <p>Outs: <span id="outs">0</span> | Batter: <span id="batter">A1</span></p>
+        <button onclick="updateScore('run', 1)">Run Scored</button>
+        <button onclick="updateScore('out', 1)">Out</button>
+        <!-- Add more: Single, Double, etc. – tie to your plays -->
+        <button onclick="location.href='../dartball/'">Back to Manager</button>
+    </div>
+    <script>
+        // Non-module updates (display refresh)
+        function updateDisplay() {
+            document.getElementById('inning').textContent = (gameState.topBottom === 'top' ? 'Top ' : 'Bottom ') + gameState.inning + 'th';
+            document.getElementById('scoreHome').textContent = gameState.scoreHome;
+            // ... update other elements
+        }
+        // Call updateDisplay() after saves
+    </script>
+</body>
+</html>
