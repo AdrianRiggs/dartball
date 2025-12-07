@@ -10,40 +10,43 @@
         button:hover { background: #218838; }
         #status { font-size: 24px; color: green; margin: 20px; }
     </style>
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+  import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAp3teE0EOa7iF69EIVNll7FSaFMRKJzEE",
-            authDomain: "dartball-4f29e.firebaseapp.com",
-            databaseURL: "https://dartball-4f29e-default-rtdb.firebaseio.com",
-            projectId: "dartball-4f29e",
-            storageBucket: "dartball-4f29e.firebasestorage.app",
-            messagingSenderId: "363609573700",
-            appId: "1:363609573700:web:2dd01042ada7a080feef11"
-        };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAp3teE0EOa7iF69EIVNll7FSaFMRKJzEE",
+    authDomain: "dartball-4f29e.firebaseapp.com",
+    databaseURL: "https://dartball-4f29e-default-rtdb.firebaseio.com",
+    projectId: "dartball-4f29e",
+    storageBucket: "dartball-4f29e.firebasestorage.app",
+    messagingSenderId: "363609573700",
+    appId: "1:363609573700:web:2dd01042ada7a080feef11"
+  };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const testRef = ref(db, 'dartball/testConnection');
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  // ← THIS WAS WRONG BEFORE — fixed now
+  const testRef = ref(db, 'testConnection');   // ← simple root-level node
 
-        function pushTestScore(score) {
-            set(testRef, { score: score, timestamp: Date.now(), message: 'Connection working!' })
-                .then(() => {
-                    document.getElementById('status').textContent = `Pushed score ${score} successfully! Check Firebase console or viewer page.`;
-                })
-                .catch(err => {
-                    document.getElementById('status').textContent = `Error: ${err.message}`;
-                });
-        }
+  function pushTestScore(score) {
+    set(testRef, { score: score, timestamp: Date.now(), message: 'Connection working!' })
+      .then(() => {
+        document.getElementById('status').textContent = `Pushed ${score} — check phone!`;
+        document.getElementById('status').style.color = 'green';
+      })
+      .catch(err => {
+        document.getElementById('status').textContent = `Error: ${err.message}`;
+        document.getElementById('status').style.color = 'red';
+      });
+  }
 
-        window.onload = () => {
-            document.getElementById('push1').onclick = () => pushTestScore(3);
-            document.getElementById('push2').onclick = () => pushTestScore(7);
-            document.getElementById('push3').onclick = () => pushTestScore(0);
-        };
-    </script>
+  window.onload = () => {
+    document.getElementById('push1').onclick = () => pushTestScore(11);
+    document.getElementById('push2').onclick = () => pushTestScore(22);
+    document.getElementById('push3').onclick = () => pushTestScore(0);
+  };
+</script>
 </head>
 <body>
     <h1>Firebase Test - Scorekeeper</h1>
