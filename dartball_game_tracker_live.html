@@ -2062,6 +2062,14 @@ function calculateTeamStats() {
     } else {
         hrEl.innerHTML = allHR.map((name, i) => `${i+1}. ${escapeHtml(name)}`).join('<br>');
     }
+    Then call pushLiveState() at the end of updateDisplay() (you already call updateDisplay() everywhere):js
+
+
+
+    pushLiveState();          // ← ADD THIS LINE
+    calculateTeamStats();
+}
+
 }
 </script>
 </body>
