@@ -40,6 +40,63 @@
         document.getElementById('status').style.color = 'red';
       });
   }
+// ——————— LIVE SYNC TO FIREBASE ———————
+import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+
+// ... your existing firebaseConfig ...
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// This is where the projector/phone will listen
+const liveRef = ref(db, 'dartball/live');   // ← change this path if you want
+
+// Call this every time something changes
+function pushLiveState() {
+  const liveState = {
+    // Basic scoreboard
+    teamA: currentState.teamA,
+    teamB: currentState.teamB,
+    inning: currentState.inning,
+    half: currentState.battingTeam === currentState.leadoff ? 'Top' : 'Bottom',
+    outs: currentState.outs,
+
+    // Current players
+    batter: document.getElementById('batter-name').textContent.trim(),
+    defender: document.getElementById('defender-name').textContent.trim(),
+
+    // Bases (send player names or just true/false)
+    bases: {
+      first:  currentState.bases.first.occupied  ? currentState.bases.first.player  : null,
+      second: currentState.bases.second.occupied ? currentState.bases.second.player : null,
+      third:  currentState.bases.third.occupied  ? currentState.bases.third.player  : null,
+    },
+
+    // Runs this half-inning + scoring display
+    runsThisInning: currentState.halfInningRuns || 0,
+    runnersScored: (document.getElementById('runners-scored')?.innerHTML || '—'),
+    rbiCredit:     (document.getElementById('rbi-credit')?.innerHTML     || '—'),
+
+    // Optional: which game (1/2/3)
+    gameNumber: currentGame,
+
+    timestamp: Date.now()
+  };
+
+  set(liveRef, liveState)
+    .then(() => console.log('Live state pushed'))
+    .catch(err => console.error('Firebase push failed:', err));
+}
+
+Then call pushLiveState() at the end of updateDisplay() (you already call updateDisplay() everywhere):js
+
+function updateDisplay() {
+    // … all your existing code …
+
+    pushLiveState();          // ← ADD THIS LINE
+    calculateTeamStats();
+}
+
 
 
 <script src="theme.js" defer></script>
