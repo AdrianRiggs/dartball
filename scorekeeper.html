@@ -12,7 +12,7 @@
         input { font-size: 18px; padding: 5px; }
     </style>
     <!-- Firebase SDK -->
-  <script type="module">
+ <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
   import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
@@ -28,47 +28,41 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const testRef = ref(db, 'testConnection');   // ← THIS LINE WAS WRONG BEFORE — now fixed
-        // Game state (build on your existing roster/lineup – example basics)
-        let gameState = {
-            inning: 1,
-            topBottom: 'top',  // 'top' or 'bottom'
-            scoreHome: 0,
-            scoreVisitor: 0,
-            outs: 0,
-            bases: { first: false, second: false, third: false },
-            currentBatter: 'A1',  // From your lineup
-            currentDefender: 'B1',
-            runsThisInning: 0,
-            lastPlay: '',
-            // Add RBI, runs, etc. as needed
-        };
+  const liveRef = ref(db, 'dartball/live');
 
-        // Save state to Firebase (happens on every update)
-        function saveState() {
-            set(scoreRef, gameState).then(() => console.log('Pushed to live!'));
-        }
+  // Listen for live updates
+  onValue(liveRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
 
-        // Example buttons – expand with your plays (hit, out, etc.)
-        function updateScore(type, value) {
-            if (type === 'run') gameState[type + (gameState.topBottom === 'top' ? 'Home' : 'Visitor')] += value;
-            // Add logic for bases, outs, advance batter/defender, RBI calc
-            saveState();  // Pushes instantly
-        }
+    document.getElementById('inning').textContent = `${data.half || 'Top'} ${data.inning}`;
+    document.getElementById('teamA-score').textContent = data.teamA || 0;
+    document.getElementById('teamB-score').textContent = data.teamB || 0;
+    document.getElementById('outs').textContent = data.outs || 0;
 
-        // Load initial from your roster if needed (stub)
-        function loadFromRoster() {
-            // Pull from localStorage or your manager logic
-            saveState();
-        }
+    document.getElementById('batter-name').textContent = data.batter || '—';
+    document.getElementById('defender-name').textContent = data.defender || '—';
 
-        // Initialize
-        window.onload = () => {
-            loadFromRoster();
-            // Listen for changes (in case multi-scorekeepers, rare)
-            onValue(scoreRef, (snapshot) => { gameState = snapshot.val() || gameState; });
-        };
-    </script>
+    // Bases
+    ['first', 'second', 'third'].forEach(base => {
+      const el = document.getElementById(base + '-player');
+      const occupied = !!data.bases[base];
+      el.textContent = occupied ? data.bases[base] : '';
+      document.getElementById(base).classList.toggle('occupied', occupied);
+    });
+
+    // Runs this inning + scoring lines
+    document.getElementById('home-runs').textContent = data.runsThisInning || 0;
+    if (data.runsThisInning > 0) document.getElementById('home-plate').classList.add('has-runs');
+
+    const rs = document.getElementById('runners-scored');
+    const rc = document.getElementById('rbi-credit');
+    if (rs) rs.innerHTML = data.runnersScored || '—';
+    if (rc) rc.innerHTML = data.rbiCredit || '—';
+
+    console.log('Live update received');
+  });
+</script>
 </head>
 <body>
     <h1>Dartball Scorekeeper</h1>
