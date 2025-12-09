@@ -1612,7 +1612,7 @@ else if (play === 'Blue' || play === 'Yellow') {
     updateDisplay();
 }
 
-  function advanceBatter() {
+ function advanceBatter() {
     const team = currentState.battingTeam;
     const size = teamSize(team);
     if (size === 0) return;
@@ -1623,6 +1623,8 @@ else if (play === 'Blue' || play === 'Yellow') {
     currentState.currentBalls[currentState.batterIndex] = 0;
     currentState.currentStrikes[currentState.batterIndex] = 0;
 }
+
+
 
     function nextBatter() { saveState(); advanceBatter(); pendingPlay = null; updateDisplay(); }
     function prevBatter() {
@@ -1968,3 +1970,4 @@ function calculateTeamStats() {
 </script>
 </body>
 </html>
+
