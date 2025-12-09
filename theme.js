@@ -1,11 +1,17 @@
 // theme.js → CLEAN, FINAL, SENIOR-APPROVED VERSION
-// No flash • Perfect panels • Blended delete buttons • Everything works
+// No flash • Perfect panels • Everything works 100%
 
 const THEMEABLE_PAGES = [
-  "index.html", "dartballGM.html", "dartball_game_tracker.html",
-  "dartball_plays_tracker.html", "scoresheet.html", "players_stats.html",
-  "dartball_roster.html", "dartball_lineup.html"
+  "index.html",
+  "dartball_lineup.html",
+  "dartball_game_tracker.html",
+  "dartball_plays_tracker.html",
+  "scoresheet.html",
+  "players_stats.html",
+  "dartball_roster.html",
+  "popup-panel.html"
 ];
+
 const currentPage = location.pathname.split("/").pop() || "index.html";
 
 const PRESETS = {
@@ -36,20 +42,17 @@ function getStyles(themeName = "light") {
   return PRESETS.light;
 }
 
-// MAIN THEME APPLY FUNCTION — CLEAN & PERFECT
+// MAIN THEME APPLY FUNCTION
 function applyTheme(themeName) {
   if (!THEMEABLE_PAGES.includes(currentPage)) return;
   const s = getStyles(themeName);
 
-  // Body
   document.body.style.background = s.bg;
   document.body.style.color = s.text;
 
-  // Scoreboard line
   const scoreLine = document.querySelector('.single-score-line');
   if (scoreLine) { scoreLine.style.background = s.bg; scoreLine.style.color = s.text; }
 
-  // Charts
   document.querySelectorAll('.inning-chart, .inning-chart table, .inning-chart th, .inning-chart td, #team-stats-table, #homerun-list, #homerun-list ~ div')
     .forEach(el => {
       el.style.background = s.chartBg;
@@ -57,11 +60,9 @@ function applyTheme(themeName) {
       el.style.borderColor = s.text + '40';
     });
 
-  // Dropdown
   const dropdown = document.getElementById('gameSelect');
   if (dropdown) { dropdown.style.background = s.bg; dropdown.style.color = s.text; }
 
-  // Action buttons
   document.querySelectorAll('.action-btns button:not(.confirm):not(.brown-btn):not(.blue-btn):not(.yellow-btn):not(.green-btn):not(.out):not(.ball-btn)')
     .forEach(btn => {
       btn.style.background = s.text + '30';
@@ -73,20 +74,15 @@ function applyTheme(themeName) {
     btn.style.borderColor = s.chartText;
   });
 
- 
-  // === ROSTER & LINEUP: Panels, boxes, player tags ===
-  document.querySelectorAll('.list, .pool, .panel, .player, .lineup-slot, .roster-player').forEach(el => {
-    el.style.background = s.bg + 'ee';  // Subtle glass effect
-    el.style.border = `1px solid ${s.text}40`;
-    el.style.color = s.text;
-  });
+  document.querySelectorAll('.list, .pool, .panel, .player, .lineup-slot, .roster-player, .pool h2, .player input')
+    .forEach(el => {
+      el.style.background = s.bg + 'ee';
+      el.style.border = `1px solid ${s.text}40`;
+      el.style.color = s.text;
+    });
 
-   
-
-    // Defender glow still works via theme
   document.querySelectorAll('.player-name.defense').forEach(el => el.style.color = s.defender);
 
-  // === BLENDED DELETE BUTTONS (no angry red!) ===
   document.querySelectorAll('.delete-btn, .del-btn').forEach(btn => {
     btn.style.background = s.text + '33';
     btn.style.color = s.text;
@@ -96,27 +92,10 @@ function applyTheme(themeName) {
     btn.onmouseleave = () => btn.style.opacity = '0.8';
   });
 
-  // Save current theme
   localStorage.setItem('dartball_projector_theme', themeName);
 }
 
-// Projector Favorite — save once, love forever
-window.saveAsProjectorFavorite = function () {
-  const favorite = {
-    bg:        document.getElementById("custBg").value        || "#ffffff",
-    text:      document.getElementById("custText").value      || "#000000",
-    chartBg:   document.getElementById("custChartBg").value   || "#f8f8f8",
-    chartText: document.getElementById("custChartText").value || "#000000",
-    defender:  document.getElementById("custDefender").value  || "#0066cc"
-  };
-  localStorage.setItem("projector_favorite", JSON.stringify(favorite));
-  localStorage.setItem('dartball_projector_theme', 'projector');
-  applyTheme('projector');
-  document.getElementById('themePanel').style.display = 'none';
-  alert("Projector Favorite saved! It will load every week.");
-};
-
-// Update theme panel to match current theme
+// Update panel appearance
 function updateThemePanelAppearance() {
   const saved = localStorage.getItem('dartball_projector_theme') || 'light';
   const s = getStyles(saved);
@@ -128,8 +107,10 @@ function updateThemePanelAppearance() {
 
   panel.querySelectorAll('.tbtn[data-theme]').forEach(btn => {
     const preset = btn.dataset.theme;
-    const colors = preset === "projector" ? JSON.parse(localStorage.getItem("projector_favorite") || '{}') : PRESETS[preset];
-    if (colors && colors.bg) {
+    const colors = preset === "projector"
+      ? JSON.parse(localStorage.getItem("projector_favorite") || '{}')
+      : PRESETS[preset];
+    if (colors?.bg) {
       btn.style.background = colors.bg;
       btn.style.color = colors.text || '#fff';
       btn.style.border = `2px solid ${(colors.text || '#fff') + '80'}`;
@@ -137,46 +118,190 @@ function updateThemePanelAppearance() {
   });
 }
 
-// Hook everything up
-const originalApply = applyTheme;
-window.applyTheme = function (themeName) {
+// Hook applyTheme to update panel
+const originalApply = applyTheme = applyTheme;
+window.applyTheme = function(themeName) {
   originalApply(themeName);
   updateThemePanelAppearance();
 };
 
-document.querySelector('button[onclick*="themePanel"]')?.addEventListener('click', () => {
-  setTimeout(updateThemePanelAppearance, 100);
-});
-
 // Public functions
-window.setTheme = function (theme) {
+window.setTheme = function(theme) {
   if (theme !== "custom") {
     ["cust_bg","cust_text","cust_chartBg","cust_chartText","cust_defender"].forEach(k => localStorage.removeItem(k));
   }
   applyTheme(theme);
-  document.getElementById('themePanel').style.display = 'none';
+  const panel = document.getElementById('themePanel');
+  if (panel) panel.style.display = 'none';
 };
 
-window.clearTheme = function () {
-  localStorage.clear();
-  location.reload();
-};
+// SAVED CUSTOM THEMES SYSTEM
+const SAVED_THEMES_KEY = "dartball_saved_custom_themes";
 
-window.applyCustomTheme = function () {
-  localStorage.setItem("cust_bg",        document.getElementById("custBg").value);
-  localStorage.setItem("cust_text",      document.getElementById("custText").value);
-  localStorage.setItem("cust_chartBg",   document.getElementById("custChartBg").value);
-  localStorage.setItem("cust_chartText", document.getElementById("custChartText").value);
-  localStorage.setItem("cust_defender",  document.getElementById("custDefender").value);
-  localStorage.setItem('dartball_projector_theme', 'custom');
-  applyTheme('custom');
-  document.getElementById('themePanel').style.display = 'none';
-};
+function getSavedThemes() {
+  return JSON.parse(localStorage.getItem(SAVED_THEMES_KEY) || "[]");
+}
 
-// Auto-load theme on every page
+function saveThemesList(themes) {
+  localStorage.setItem(SAVED_THEMES_KEY, JSON.stringify(themes));
+}
+
+// RENDER SAVED THEMES — NOW WITH CLEAN TRASH BUTTONS
+function renderSavedThemes() {
+  const container = document.getElementById('saved-themes-list');
+  if (!container) return;
+
+  const saved = getSavedThemes();
+  container.innerHTML = '';
+
+  if (saved.length === 0) {
+    container.innerHTML = '<i style="opacity:0.6;">No saved themes yet</i>';
+    return;
+  }
+
+  saved.forEach((theme, index) => {
+    // Main theme button (takes most of the row)
+    const btn = document.createElement('button');
+    btn.className = 'tbtn saved-theme-btn';
+    btn.textContent = theme.name;
+    btn.style.cssText = `
+      width: 78%;
+      margin: 6px 0;
+      padding: 14px;
+      background: ${theme.colors.bg};
+      color: ${theme.colors.text};
+      border: 2px solid ${theme.colors.text + '80'};
+      border-radius: 10px;
+      font-weight: bold;
+      text-align: left;
+      position: relative;
+    `;
+
+    btn.onclick = () => {
+      Object.entries(theme.colors).forEach(([k, v]) => localStorage.setItem(`cust_${k}`, v));
+      localStorage.setItem('dartball_projector_theme', 'custom');
+      applyTheme('custom');
+      document.getElementById('themePanel').style.display = 'none';
+    };
+
+    // Trash button — same style as your roster delete buttons
+    const del = document.createElement('button');
+    del.textContent = 'Delete';
+    del.style.cssText = `
+      width: 18%;
+      margin: 6px 4px 6px 8px;
+      padding: 14px 8px;
+      background: ${theme.colors.text + '40'};
+      color: ${theme.colors.text};
+      border: 2px solid ${theme.colors.text + '80'};
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      opacity: 0.9;
+    `;
+    del.onmouseenter = () => del.style.opacity = '1';
+    del.onmouseleave = () => del.style.opacity = '0.9';
+
+    del.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm(`Delete "${theme.name}" forever?`)) {
+        const updated = getSavedThemes();
+        updated.splice(index, 1);
+        saveThemesList(updated);
+        renderSavedThemes();
+      }
+    };
+
+    // Wrap both in a flex container
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display: flex; align-items: center; gap: 8px; width: 100%;';
+    wrapper.appendChild(btn);
+    wrapper.appendChild(del);
+
+    container.appendChild(wrapper);
+  });
+}
+// ALL BUTTONS WORK — Presets + Live Picker + Saved Themes
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Preset buttons
+  document.querySelectorAll('.tbtn[data-theme]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.theme;
+      if (t === 'projector' && !localStorage.getItem('projector_favorite')) {
+        alert("No Projector Favorite saved yet!");
+        return;
+      }
+      setTheme(t);
+    });
+  });
+
+  // 2. Apply Live Custom Colors
+  document.getElementById('apply-live-custom')?.addEventListener('click', () => {
+    const c = {
+      bg:        document.getElementById('liveBg').value,
+      text:      document.getElementById('liveText').value,
+      chartBg:   document.getElementById('liveChartBg').value,
+      chartText: document.getElementById('liveChartText').value,
+      defender:  document.getElementById('liveDefender').value
+    };
+    Object.entries(c).forEach(([k,v]) => localStorage.setItem(`cust_${k}`, v));
+    localStorage.setItem('dartball_projector_theme', 'custom');
+    applyTheme('custom');
+  });
+
+  // 3. Save as Projector Favorite
+  document.getElementById('save-as-projector-fav')?.addEventListener('click', () => {
+    const fav = {
+      bg:        document.getElementById('liveBg').value,
+      text:      document.getElementById('liveText').value,
+      chartBg:   document.getElementById('liveChartBg').value,
+      chartText: document.getElementById('liveChartText').value,
+      defender:  document.getElementById('liveDefender').value
+    };
+    localStorage.setItem("projector_favorite", JSON.stringify(fav));
+    localStorage.setItem('dartball_projector_theme', 'projector');
+    applyTheme('projector');
+    alert("Projector Favorite saved!");
+  });
+
+  // 4. Save Current as Named Theme
+  document.getElementById('save-current-as-custom')?.addEventListener('click', () => {
+    let name = document.getElementById('custom-theme-name').value.trim() || prompt("Theme name?");
+    if (!name) return;
+    const colors = {
+      bg:        document.getElementById('liveBg').value,
+      text:      document.getElementById('liveText').value,
+      chartBg:   document.getElementById('liveChartBg').value,
+      chartText: document.getElementById('liveChartText').value,
+      defender:  document.getElementById('liveDefender').value
+    };
+    const list = getSavedThemes();
+    const idx = list.findIndex(t => t.name === name);
+    if (idx > -1) list[idx].colors = colors; else list.push({name, colors});
+    saveThemesList(list);
+    document.getElementById('custom-theme-name').value = '';
+    renderSavedThemes();
+    alert(`"${name}" saved!`);
+  });
+
+  // 5. Sync color pickers when panel opens
+  document.querySelector('button[onclick*="themePanel"]')?.addEventListener('click', () => {
+    setTimeout(() => {
+      const c = getStyles(localStorage.getItem('dartball_projector_theme') || 'light');
+      ['liveBg','liveText','liveChartBg','liveChartText','liveDefender'].forEach(id => {
+        document.getElementById(id).value = c[id.replace('live','').toLowerCase()];
+      });
+      updateThemePanelAppearance();
+      renderSavedThemes();
+    }, 150);
+  });
+});
+
+// Page load — apply saved theme
 window.addEventListener('load', () => {
   if (!THEMEABLE_PAGES.includes(currentPage)) return;
   const saved = localStorage.getItem('dartball_projector_theme');
   const fallback = localStorage.getItem("projector_favorite") ? 'projector' : 'light';
   applyTheme(saved || fallback);
+  renderSavedThemes();
 });
