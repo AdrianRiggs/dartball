@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <script src="theme.js" defer></script>
@@ -18,7 +18,7 @@
 
     .score-board {
         width: 100%;
-        max-width: 1600px;
+        max-width: 1800px;
         margin: 0 auto 30px auto;   /* centers the whole scoreboard */
     }
 
@@ -28,10 +28,10 @@
     align-items: baseline;
     justify-items: center;
     gap: 20px;
-    padding: 15px 32px;
+    padding: 10px 30px;
     background: white;
     color: black;
-    font-size: 1.9rem;
+    font-size: 2.9rem;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
@@ -48,8 +48,8 @@
 }
 
 /* Teams stay naturally left/right of center */
-.team-a   { justify-self: start;   text-align:center; }
-.team-b   { justify-self: end;  text-align: left; }
+.team-a   {text-align:center; }
+.team-b   {text-align: cenyer;}
 
 /* Outs is in the exact center column */
 .outs-section {
@@ -58,17 +58,17 @@
 
 /* Styling tweaks */
 .team-label   { font-size: 2.2rem;  }
-.score        { font-size: 3.8rem; font-weight: bold; }
-.outs-label   { font-size: 2.2rem; margin-right: 8px; }
-.outs-count   { font-size: 3.5rem; font-weight: bold; text-decoration: underline; }
+.score        { font-size: 4rem; font-weight: bold; }
+.outs-label   { font-size: 2.2rem; margin-right: 8px;margin-left: 8px; }
+.outs-count   { font-size: 4.5rem; font-weight: bold; text-decoration: underline;margin-right: 8px; }
 
 .inning-section {
-    font-size: 2.2rem;
+    font-size: 2.8rem;
     font-weight: bold;
     text-align: right;
 }
 #inning {
-    font-size: 2rem;
+    font-size: 2.8rem;
     margin-left: 8px;
 }
 
@@ -1429,7 +1429,7 @@ else if (play === 'Blue' || play === 'Yellow') {
             }
         }
 
-        // === DEFENDER MISS → ERROR + STRIKE ON BATTER (except don't double-count in FPO) ===
+// === DEFENDER MISS → ERROR + STRIKE ON BATTER (except don't double-count in FPO) ===
         else if (defDart === 'Miss') {
             if (!isFPO) {
                 currentState.currentStrikes[currentState.batterIndex] = 
@@ -1623,7 +1623,6 @@ else if (play === 'Blue' || play === 'Yellow') {
     currentState.currentBalls[currentState.batterIndex] = 0;
     currentState.currentStrikes[currentState.batterIndex] = 0;
 }
-
 
 
     function nextBatter() { saveState(); advanceBatter(); pendingPlay = null; updateDisplay(); }
@@ -1873,18 +1872,7 @@ function resumeFromActiveGame() {
         currentGame = newGame;
         loadGameState();
     });
-// ——— PRE-LOAD TEST LINEUPS (DELETE WHEN DONE) ———
-teamA = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Wilson"];
-teamB = ["Anderson", "Taylor", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Moore"];
 
-currentState.leadoff = 'A';
-currentState.battingTeam = 'A';
-batterIndex.A = batterIndex.B = defenderIndex.A = defenderIndex.B = 0;
-currentState.batterIndex = 0;
-currentState.defenderIndex = 0;
-
-updateDisplay();
-// ——— END TEST BLOCK ———
     window.onload = () => {
     loadGameState();
     calculateTeamStats();   // ensures stats show even on fresh load/resume
@@ -1970,4 +1958,3 @@ function calculateTeamStats() {
 </script>
 </body>
 </html>
-
