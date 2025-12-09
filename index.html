@@ -195,4 +195,116 @@
       </button>
     </div>
   </div>
+</div>    margin-top: 15px;
+    padding: 12px 35px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  #themePanel .close-btn {
+    background: #c62828;
+    color: white;
+  }
+
+  #themePanel .custom-btn {
+    background: #6a1b9a;
+    color: #ffeb3b;
+  }
+
+  #themePanel .apply-custom-btn {
+    background: #00c853;
+    color: white;
+  }
+</style>
+
+<body>
+    <h1>Dartball Manager</h1>
+       <p>Starting from scratch -1 Make a Roster and save- 2 Make Lineups-3 Play Game<p>
+         <p>Roster is already made/imported- 1 Make Lineups(2)-2 Play Game(3)<p>
+    <div class="menu">
+        <a href="dartball_roster.html">1. Make or Edit Roster</a>
+        <a href="dartball_lineup.html">2. Make or Edit Teams' Lineups</a>
+        <a href="dartball_game_tracker.html">3. Play Game</a>
+        <a href="dartball_plays_tracker.html">4.a Game's Scoresheet--Tracking Plays</a>
+        <a href="scoresheet.html">4.b Stats for Games 1 & 2</a>
+        <a href="players_stats.html">4.c Individual Player's Stats</a>
+        <a href="dartballGM.html">theme test</a>
+
+<!-- Theme button + full popup (copy-paste exactly this block on EVERY page) -->
+<div style="position:fixed; bottom:15px; right:15px; z-index:9999;">
+  <button onclick="document.getElementById('themePanel').style.display='flex'"
+          style="padding:14px 22px; font-size:18px; background:#222; color:white; border:none; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.6); cursor:pointer;">
+    Theme
+  </button>
 </div>
+
+<!-- THE ONE AND ONLY THEME PANEL – NOW WITH CUSTOM COLOR PICKER -->
+<div id="themePanel" style="display:none;">
+  <div class="panel-inner">
+    <h3>Theme Selector</h3>
+
+    <!-- 1. Predefined Themes -->
+    <div class="premade-themes">
+      <button class="tbtn" data-theme="light">Light</button>
+      <button class="tbtn" data-theme="midnight">Midnight</button>
+      <button class="tbtn" data-theme="forest">Forest</button>
+      <button class="tbtn" data-theme="charcoal">Charcoal</button>
+      <button class="tbtn" data-theme="retro">Retro</button>
+      <button class="tbtn" data-theme="projector">Projector Favorite</button>
+    </div>
+
+    <hr>
+
+    <!-- 2. Your Saved Themes -->
+    <div class="custom-themes-section">
+      <h4>Your Saved Themes</h4>
+      <div id="saved-themes-list"></div>
+
+      <div class="save-current-theme" style="margin-top:12px;">
+        <input type="text" id="custom-theme-name" placeholder="e.g. Sunset Vibes" style="width:58%; padding:8px;">
+        <button id="save-current-as-custom">Save Current as New Theme</button>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- 3. NEW: Live Custom Color Picker (always visible, super clean) -->
+    <div class="custom-color-picker">
+      <h4 style="margin:15px 0 10px;">Live Custom Colors</h4>
+      
+      <label>Background</label>
+      <input type="color" id="liveBg" value="#001122">
+
+      <label>Main Text</label>
+      <input type="color" id="liveText" value="#88ccff">
+
+      <label>Charts Background</label>
+      <input type="color" id="liveChartBg" value="#002244">
+
+      <label>Charts Text</label>
+      <input type="color" id="liveChartText" value="#88ccff">
+
+      <label>Defender Glow</label>
+      <input type="color" id="liveDefender" value="#66bbff">
+
+      <div style="margin-top:15px; text-align:center;">
+        <button id="apply-live-custom" style="background:#00c853; color:white; padding:10px 20px; border:none; border-radius:8px; font-weight:bold;">
+          Apply These Colors Now
+        </button>
+        <button id="save-as-projector-fav" style="background:#ff9800; color:white; margin-left:10px; padding:10px 20px; border:none; border-radius:8px; font-weight:bold;">
+          Set as Projector Favorite
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top:25px; text-align:center;">
+      <button onclick="document.getElementById('themePanel').style.display='none'" style="padding:12px 30px; background:#c62828; color:white; border:none; border-radius:10px;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
