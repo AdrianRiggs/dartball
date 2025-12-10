@@ -1,111 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
+ <!DOCTYPE html><html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Test - Scorekeeper</title>
-    <style>
-        body { font-family: Arial; padding: 20px; background: #f0f0f0; text-align: center; }
-        button { padding: 15px 30px; font-size: 18px; margin: 10px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; }
-        button:hover { background: #218838; }
-        #status { font-size: 24px; color: green; margin: 20px; }
-    </style>
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-  import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAp3teE0EOa7iF69EIVNll7FSaFMRKJzEE",
-    authDomain: "dartball-4f29e.firebaseapp.com",
-    databaseURL: "https://dartball-4f29e-default-rtdb.firebaseio.com",
-    projectId: "dartball-4f29e",
-    storageBucket: "dartball-4f29e.firebasestorage.app",
-    messagingSenderId: "363609573700",
-    appId: "1:363609573700:web:2dd01042ada7a080feef11"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  // ← THIS WAS WRONG BEFORE — fixed now
-  const testRef = ref(db, 'testConnection');   // ← simple root-level node
-
-  function pushTestScore(score) {
-    set(testRef, { score: score, timestamp: Date.now(), message: 'Connection working!' })
-      .then(() => {
-        document.getElementById('status').textContent = `Pushed ${score} — check phone!`;
-        document.getElementById('status').style.color = 'green';
-      })
-      .catch(err => {
-        document.getElementById('status').textContent = `Error: ${err.message}`;
-        document.getElementById('status').style.color = 'red';
-      });
-  }
-// ——————— LIVE SYNC TO FIREBASE ———————
-import { getDatabase, ref, set } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
-
-// ... your existing firebaseConfig ...
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// This is where the projector/phone will listen
-const liveRef = ref(db, 'dartball/live');   // ← change this path if you want
-
-// Call this every time something changes
-function pushLiveState() {
-  const liveState = {
-    // Basic scoreboard
-    teamA: currentState.teamA,
-    teamB: currentState.teamB,
-    inning: currentState.inning,
-    half: currentState.battingTeam === currentState.leadoff ? 'Top' : 'Bottom',
-    outs: currentState.outs,
-
-    // Current players
-    batter: document.getElementById('batter-name').textContent.trim(),
-    defender: document.getElementById('defender-name').textContent.trim(),
-
-    // Bases (send player names or just true/false)
-    bases: {
-      first:  currentState.bases.first.occupied  ? currentState.bases.first.player  : null,
-      second: currentState.bases.second.occupied ? currentState.bases.second.player : null,
-      third:  currentState.bases.third.occupied  ? currentState.bases.third.player  : null,
-    },
-
-    // Runs this half-inning + scoring display
-    runsThisInning: currentState.halfInningRuns || 0,
-    runnersScored: (document.getElementById('runners-scored')?.innerHTML || '—'),
-    rbiCredit:     (document.getElementById('rbi-credit')?.innerHTML     || '—'),
-
-    // Optional: which game (1/2/3)
-    gameNumber: currentGame,
-
-    timestamp: Date.now()
-  };
-
-  set(liveRef, liveState)
-    .then(() => console.log('Live state pushed'))
-    .catch(err => console.error('Firebase push failed:', err));
-}
-
-Then call pushLiveState() at the end of updateDisplay() (you already call updateDisplay() everywhere):js
-
-function updateDisplay() {
-    // … all your existing code …
-
-    pushLiveState();          // ← ADD THIS LINE
-    calculateTeamStats();
-}
-
-
-
 <script src="theme.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dartball Manager</title>
 
 <style>
-      .body {
+
+
+    body {
         margin: 0;
         padding: 20px;
         background: #f5f5f5;
@@ -116,85 +19,96 @@ function updateDisplay() {
 
     .score-board {
         width: 100%;
-        max-width: 1600px;
+        max-width: 1010px;
         margin: 0 auto 30px auto;   /* centers the whole scoreboard */
     }
 
-.single-score-line {
-    display: grid;
-    grid-template-columns: auto 1fr auto 1fr auto;  /* 5 columns */
-    align-items: baseline;
-    justify-items: center;
-    gap: 20px;
-    padding: 15px 32px;
-    background: white;
-    color: black;
-    font-size: 1.9rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-/* Force Game dropdown to stick to the left edge */
-.single-score-line > .game-dropdown {
-    justify-self: start;
-    font-size: 1.8rem  
-}
-
-/* Force inning to stick to the right edge */
-.single-score-line > .inning-section {
-    justify-self: end;
-}
-
-/* Teams stay naturally left/right of center */
-.team-a   { justify-self: start;   text-align:center; }
-.team-b   { justify-self: end;  text-align: left; }
-
-/* Outs is in the exact center column */
-.outs-section {
-    grid-column: 3; /* the middle column */
-}
-
-/* Styling tweaks */
-.team-label   { font-size: 2.2rem;  }
-.score        { font-size: 3.8rem; font-weight: bold; }
-.outs-label   { font-size: 2.2rem; margin-right: 8px; }
-.outs-count   { font-size: 3.5rem; font-weight: bold; text-decoration: underline; }
-
-.inning-section {
-    font-size: 2.2rem;
-    font-weight: bold;
-    text-align: right;
-}
-#inning {
-    font-size: 2rem;
-    margin-left: 8px;
-}
-
-/* Mobile fallback — stack everything nicely */
-@media (max-width: 840px) {
+    /* Your perfect horizontal score line */
     .single-score-line {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        text-align: center;
-        padding: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        gap: 28px;
+        padding: 18px 24px;
+        background: white;
+        color: black;
+        font-size: 1.9rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        flex-wrap: nowrap;
+        white-space: nowrap;
     }
-    .game-dropdown,
-    .inning-section,
-    .team-a,
-    .team-b,
-    .outs-section {
-        justify-self: center;
-        text-align: center;
-    }
-    .team-a, .team-b { justify-self: center; text-align: justify; }
-}
 
-   .player-info {
+
+    .game-dropdown {
+        background: transparent;
+        color: black;
+        border: 2px solid #333;
+        border-radius: 6px;
+        font-size: 1.2rem;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .team-label {
+        font-size: 2.4rem;
+        font-weight: bold;
+        margin-right: 10px;
+    
+    }
+     .outs-label {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-right: 10px;
+        text-decoration: underline;
+        text-underline-position: auto;
+   
+    }
+
+    .score {
+        font-size: 3rem;
+        font-weight: bold;
+    
+    
+    }
+    .outs-count {
+        font-size: 2.3rem;
+        font-weight: bold;
+        text-decoration: underline;
+        text-underline-position: auto;
+    
+    }
+
+    .inning-section {
+        font-size: 1.rem;
+         font-weight: bold;
+    }
+    .inning-section #inning {
+        font-weight: bold;
+        font-size: 2.3rem;
+    }
+
+    /* Mobile tweaks for the score line */
+    @media (max-width: 640px) {
+        .single-score-line {
+            gap: 14px;
+            padding: 12px;
+            font-size: 1.1rem;
+        }
+        .team-label, .outs-label { font-size: 1.4rem; }
+        .score, .outs-count { font-size:2.4rem; }
+        .game-dropdown { font-size: 1.1rem; padding: 4px 8px; }
+    }
+
+    
+
+    .player-info {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin: 20px 0;
-        font-size: clamp(1rem, 3.5vw, 3em);
+        font-size: clamp(1rem, 3.5vw, 1.8em);
         font-weight: bold;
         color: #222;
         flex-wrap: wrap;
@@ -203,7 +117,7 @@ function updateDisplay() {
     /* … keep every single rule you had below this point exactly as-is … */
     /* (all the .bases, .controls, .inning-chart, .modal, etc.) */
 
-        
+        }
         .player-block {
             display: flex;
             flex-direction: column;
@@ -211,7 +125,7 @@ function updateDisplay() {
             min-width: 200px;
         }
         .player-name {
-            font-size: clamp(1.3rem, 5vw, 5em);
+            font-size: clamp(1.3rem, 5vw, 2.1em);
             font-weight: bold;
             margin-bottom: 6px;
         }
@@ -219,10 +133,10 @@ function updateDisplay() {
             color: #04662a;
         }
         .player-name.defense {
-            color: #04662a;
+            color: #7a1313;
         }
         .player-index {
-            font-size: 1em;
+            font-size: .6em;
             color: #888;
             font-weight: normal;
             margin-left: 6px;
@@ -310,16 +224,21 @@ function updateDisplay() {
     font-size: 1.4rem;
     font-weight: 900;
     color: inherit;
-   
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
 }
 
 /* PLAYER NAME — inside the base */
 .base .player-label {
     position: static !important;
-    font-size: 1.8rem !important;
-    font-weight:1000 !important;
-    color: black !important;
-    
+    font-size: 1.3rem !important;
+    font-weight: 900 !important;
+    color: white !important;
+    text-shadow: 
+        2px 2px 0 #000,
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        0 0 10px #000;
     margin: 4px 0 0 0;
     text-align: center;
     bottom: auto !important;
@@ -344,25 +263,28 @@ function updateDisplay() {
 
 /* Run count inside Home Plate */
 .base.home-plate .run-count {
-    font-size: 3.5rem !important;
-    font-weight: 1000;
+    font-size: 2.5rem !important;
+    font-weight: 900;
     color: white;
-   
+    text-shadow: 
+        2px 2px 0 #000,
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        0 0 8px #000 !important;
 }
 
 /* TWO SCORING LINES — regular names */
 .rbi-names {
-    font-weight: 700;  
-     font-size: 1.3rem              /* matches your gold HR names */
+    font-weight: 700;                 /* matches your gold HR names */
     /* color comes from theme — leave it alone */
 }
 
 /* GOLD + PARENTHESES FOR HOME RUN HITTERS */
 .rbi-names .hr {
     color: #ffeb3b !important;        /* gold */
-    font-weight: 700;
-     font-size: 1.3rem       /* same weight as regular names */
-    
+    font-weight: 700;                 /* same weight as regular names */
+    text-shadow: 1px 1px 3px #000;    /* optional: keeps it readable */
 }
         .controls {
             display: grid;
@@ -682,41 +604,6 @@ function updateDisplay() {
 
     </style>
 </head>
-<!-- Theme button + full popup (copy-paste exactly this block on EVERY page) -->
-<div style="position:fixed; bottom:15px; right:15px; z-index:9999;">
-  <button onclick="document.getElementById('themePanel').style.display='flex'"
-          style="padding:14px 22px; font-size:18px; background:#222; color:white; border:none; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.6); cursor:pointer;">
-    Theme
-  </button>
-</div>
-
-<div id="themePanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:10000; align-items:center; justify-content:center;">
-  <div class="panel-inner">
-    <h2>Dartball Projector Theme</h2>
-
-    <button onclick="setTheme('midnight')"  class="tbtn" data-theme="midnight">Midnight Blue</button>
-    <button onclick="setTheme('forest')"    class="tbtn" data-theme="forest">Forest Green</button>
-    <button onclick="setTheme('charcoal')"  class="tbtn" data-theme="charcoal">Charcoal + Cream</button>
-    <button onclick="setTheme('retro')"     class="tbtn" data-theme="retro">Retro Purple</button>
-    <button onclick="clearTheme()"          class="tbtn">Revert to Original</button>
-
-    <button onclick="document.getElementById('cust').style.display='block'; this.style.display='none';"
-            class="tbtn custom-btn">Custom Colors</button>
-
-    <div id="cust" style="display:none; margin-top:20px;">
-      <label>Background     <input type="color" id="custBg"></label><br><br>
-      <label>Main Text      <input type="color" id="custText"></label><br><br>
-      <label>Chart Area      <input type="color" id="custChartBg"></label><br><br>
-      <label>Chart Text      <input type="color" id="custChartText"></label><br><br>
-      <label>Defender Glow   <input type="color" id="custDefender"></label><br><br>
-      <button onclick="applyCustomTheme()" class="apply-custom-btn">Apply Custom</button>
-    </div>
-
-    <button onclick="document.getElementById('themePanel').style.display='none'" class="close-btn">
-      Close
-    </button>
-  </div>
-</div>
 <body>
 
     <div class="score-board">
@@ -730,7 +617,7 @@ function updateDisplay() {
                 <!-- add more games here -->
             </select>
 
-             <!-- Team A -->
+            <!-- Team A -->
             <span class="team-a">
                 <span class="team-label">Team A</span>
                 <span class="score" id="teamA-score">5</span>
@@ -841,7 +728,6 @@ function updateDisplay() {
             <button type="button" class="edit-lineup" onclick="editLineup()">Edit Lineup</button>
             <button type="button" class="load-lineup" onclick="loadLineup()">Load Lineup</button>
         </div>
-       
     </div>
 
     <div class="inning-chart">
@@ -1022,118 +908,72 @@ function updateDisplay() {
     const STATE_KEY = () => `dartball_game${currentGame}_state`;
     const COMBINED_PLAYS_KEY = 'dartball_combined_plays';
 
-function applyTheme(themeName) {
-  if (!THEMEABLE_PAGES.includes(currentPage)) return;
-  const s = getStyles(themeName);
+function setTheme(theme) {
+    const styles = {
+        midnight: { bg: '#001122', text: '#88ccff', chartBg: '#002244', chartText: '#88ccff', defender: '#66bbff' },
+        forest:   { bg: '#002200', text: '#88ff88', chartBg: '#003300', chartText: '#88ff88', defender: '#77ff77' },
+        charcoal: { bg: '#1a1a1a', text: '#ffddaa', chartBg: '#2d2d2d', chartText: '#ffddaa', defender: '#ffcc88' },
+        retro:    { bg: '#2d1b3a', text: '#ffd700', chartBg: '#3d2b4d', chartText: '#ffd700', defender: '#ffea80' }
+    };
 
-  // === BASIC PAGE COLORS ===
-  document.body.style.background = s.bg;
-  document.body.style.color = s.text;
+    const s = styles[theme];
 
-  const scoreLine = document.querySelector('.single-score-line');
-  if (scoreLine) { scoreLine.style.background = s.bg; scoreLine.style.color = s.text; }
+    // Main background & text
+    document.body.style.background = s.bg;
+    document.body.style.color = s.text;
 
-  document.querySelectorAll('.inning-chart, .inning-chart table, .inning-chart th, .inning-chart td, #team-stats-table, #homerun-list, #homerun-list ~ div')
-    .forEach(el => {
-      el.style.background = s.chartBg;
-      el.style.color = s.chartText;
-      el.style.borderColor = s.text + '40';
+    // Scoreboard
+    document.querySelector('.single-score-line').style.background = s.bg;
+    document.querySelector('.single-score-line').style.color = s.text;
+
+    // Charts + HOMERUN SECTION (now matches perfectly)
+    document.querySelectorAll('.inning-chart, .inning-chart table, .inning-chart th, .inning-chart td, #team-stats-table, #homerun-list, #homerun-list ~ div')
+        .forEach(el => {
+            el.style.background = s.chartBg;
+            el.style.color = s.chartText;
+            el.style.borderColor = s.text + '40';
+        });
+
+
+ 
+    // Dropdown
+    document.getElementById('gameSelect').style.background = s.bg;
+    document.getElementById('gameSelect').style.color = s.text;
+
+    // Bottom action buttons (Next Batter, Edit Lineup, etc.)
+    document.querySelectorAll('.action-btns button:not(.confirm):not(.brown-btn):not(.blue-btn):not(.yellow-btn):not(.green-btn):not(.out):not(.ball-btn)')
+        .forEach(btn => {
+            btn.style.background = s.text + '30';
+            btn.style.color = s.bg;
+            btn.style.border = '2px solid ' + s.text;
+        });
+           // ADD THESE TWO LINES — fixes bottom button text
+    document.querySelectorAll('.action-btns button').forEach(btn => {
+        btn.style.color = s.chartText;           // ← bright readable text
+        btn.style.borderColor = s.chartText;     // ← matching border
     });
 
-  const dropdown = document.getElementById('gameSelect');
-  if (dropdown) { dropdown.style.background = s.bg; dropdown.style.color = s.text; }
-
-  document.querySelectorAll('.action-btns button:not(.confirm):not(.brown-btn):not(.blue-btn):not(.yellow-btn):not(.green-btn):not(.out):not(.ball-btn)')
-    .forEach(btn => {
-      btn.style.background = s.text + '30';
-      btn.style.color = s.bg;
-      btn.style.border = '2px solid ' + s.text;
+    // DEFENDER NAME — now bright and readable!
+    document.querySelectorAll('.player-name.defense').forEach(el => {
+        el.style.color = s.defender || s.text;
     });
-  document.querySelectorAll('.action-btns button').forEach(btn => {
-    btn.style.color = s.chartText;
-    btn.style.borderColor = s.chartText;
-  });
 
-  document.querySelectorAll('.player-name.defense').forEach(el => el.style.color = s.defender);
+    // DO NOT touch play buttons — they keep original colors
 
-  document.querySelectorAll('.list').forEach(list => {
-    list.style.background = `linear-gradient(to bottom, ${s.bg}dd, ${s.bg})`;
-    list.style.borderColor = s.text + '40';
-  });
-
-  document.querySelectorAll('.player, .panel h3').forEach(el => {
-    el.style.background = `${s.bg}ee`;
-    el.style.border = `1px solid ${s.text}40`;
-    el.style.boxShadow = `0 2px 8px rgba(0,0,0,0.2)`;
-    el.style.color = s.text;
-    el.style.backdropFilter = 'blur(4px)';
-  });
-
-  document.querySelectorAll('.add-form button, .sort-btns button, .btn, .import-options button')
-    .forEach(btn => { btn.style.background = s.text + 'cc'; btn.style.color = s.bg; });
-
-  // === PLAYER NAMES: Always theme color (roster + lineup) ===
-  document.querySelectorAll('.player input, .player-name, .lineup-player, .roster-player').forEach(el => {
-    el.style.color = s.text;
-    el.style.caretColor = s.text;
-  });
-
-  // === DELETE BUTTONS: Theme-aware (darker accent) ===
-  document.querySelectorAll('.delete-btn, .del-btn').forEach(btn => {
-    const baseColor = s.text.replace('#', '');
-    const r = parseInt(baseColor.substr(0,2),16);
-    const g = parseInt(baseColor.substr(2,2),16);
-    const b = parseInt(baseColor.substr(4,2),16);
-    const darker = '#' + 
-      Math.max(0, r-70).toString(16).padStart(2,'0') +
-      Math.max(0, g-70).toString(16).padStart(2,'0') +
-      Math.max(0, b-70).toString(16).padStart(2,'0');
-
-    btn.style.background = darker;
-    btn.style.color = s.text;
-    btn.style.border = '2px solid ' + s.text;
-    btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
-  });
-
-  // === PLAYER INPUT FIELDS: Subtle background + border ===
-  document.querySelectorAll('.player input').forEach(input => {
-    input.style.background = s.bg + 'cc';
-    input.style.border = '1px solid ' + s.text + '40';
-    input.style.borderRadius = '6px';
-  });
-
-  // === ELIMINATE WHITE FLASH on new/dragged names (THE FIX YOU WANTED) ===
-  const css = `
-    .player input,
-    .player-name,
-    .lineup-player,
-    .drag-player,
-    [draggable="true"],
-    .player,
-    .lineup-slot > div,
-    .roster-player {
-      color: ${s.text} !important;
-      background-color: ${s.bg}dd !important;
-      caret-color: ${s.text} !important;
-      transition: all 0.15s ease !important;
-    }
-    .player input {
-      border: 1px solid ${s.text}40 !important;
-      border-radius: 6px !important;
-    }
-  `;
-
-  let fixStyle = document.getElementById('no-white-flash-fix');
-  if (!fixStyle) {
-    fixStyle = document.createElement('style');
-    fixStyle.id = 'no-white-flash-fix';
-    document.head.appendChild(fixStyle);
-  }
-  fixStyle.textContent = css;
-
-  // === SAVE THEME CHOICE ===
-  localStorage.setItem('dartball_projector_theme', themeName);
+    localStorage.setItem('dartball_projector_theme', theme);
+    document.getElementById('themePanel').style.display = 'none';
 }
+
+function clearTheme() {
+    localStorage.removeItem('dartball_projector_theme');
+    location.reload(); // 100% perfect restore
+}
+
+// Auto-load saved theme
+window.addEventListener('load', () => {
+    const saved = localStorage.getItem('dartball_projector_theme');
+    if (saved) setTheme(saved);
+});
 
     function teamSize(t) { return t === 'A' ? teamA.length : teamB.length; }
     function normalizePlayerEntry(x) {
@@ -1184,20 +1024,13 @@ function applyTheme(themeName) {
     }
     updateDisplay();
 }
-   function resetGameState() {
-    // Safely clear scoring display even if DOM not ready yet
-    const el1 = document.getElementById('scoring-runners');
-    const el2 = document.getElementById('runners-scored');
-    const el3 = document.getElementById('rbi-credit');
-    if (el1) el1.textContent = '';
-    if (el2) el2.innerHTML = '—';
-    if (el3) el3.innerHTML = '—';
-
+    function resetGameState() {
+            document.getElementById('scoring-runners').textContent = '';  
+                document.getElementById('runners-scored').innerHTML = '—';
+    document.getElementById('rbi-credit').innerHTML     = '—';
     delete currentState.runnersScoredThisHalf;
     delete currentState.rbiThisHalf;
-
-    // … rest of your reset code unchanged …
-             currentState = {
+        currentState = {
             teamA: 0, teamB: 0, inning: 1, battingTeam: 'A', outs: 0,
             bases: { first: { occupied: false, player: '' }, second: { occupied: false, player: '' }, third: { occupied: false, player: '' } },
             batterIndex: 0, defenderIndex: 0,
@@ -1482,53 +1315,70 @@ else if (play === 'Blue' || play === 'Yellow') {
     pendingPlay = null;
     updateDisplay();
 }
-   
-            // ——————————————————————— DEFENDER THROWS ———————————————————————
-         else if (play.startsWith('Defender')) {
+    // ——————————————————————— DEFENDER THROWS ———————————————————————
+    else if (play.startsWith('Defender')) {
         const defDart = play.replace('Defender', '');
         let defCode = '';
         const isFPO = currentState.pendingFPO;
         const canDoubleOut = hasRunners() && currentState.outs < 2;
+        const strikesBefore = currentState.currentStrikes[currentState.batterIndex] || 0;
 
-        // === DEFENDER HITS (Blue or Yellow) ===
-        if (defDart === 'Blue' || defDart === 'Yellow') {
-            if (currentState.batterDart === 'Yellow' && defDart === 'Yellow' && canDoubleOut) {
-                // FORCE DOUBLE PLAY (only on Yellow vs Yellow with runners & <2 outs)
+        if (currentState.batterDart === 'Blue') {
+            if (defDart === 'Blue' || defDart === 'Yellow') {
+                currentState.outs++;
+                defCode = 'SPO';
+                advanceBatterFlag = true;
+            } else if (defDart === 'Miss') {
+                currentState.currentStrikes[currentState.batterIndex]++;
+                if (currentState.currentStrikes[currentState.batterIndex] >= 3) {
+                    currentState.outs++;
+                    advanceBatterFlag = true;
+                    currentState.currentBalls[currentState.batterIndex] = 0;
+                    currentState.currentStrikes[currentState.batterIndex] = 0;
+                    defCode = 'SKO';
+                } else {
+                    defCode = 'E';
+                }
+            }
+        }
+        else if (currentState.batterDart === 'Yellow') {
+            if (defDart === 'Yellow' && canDoubleOut) {
                 currentState.outs += 2;
 
-                // Remove forced runner (for scoring display cleanup)
+                // Remove forced-out runner and clean scoring trackers
+                let forcedOutPlayer = '';
                 if (currentState.bases.third.occupied) {
+                    forcedOutPlayer = currentState.bases.third.player;
                     currentState.bases.third = { occupied: false, player: '' };
                 } else if (currentState.bases.second.occupied) {
+                    forcedOutPlayer = currentState.bases.second.player;
                     currentState.bases.second = { occupied: false, player: '' };
                 } else if (currentState.bases.first.occupied) {
+                    forcedOutPlayer = currentState.bases.first.player;
                     currentState.bases.first = { occupied: false, player: '' };
                 }
 
+                if (forcedOutPlayer) {
+                    if (currentState.runnersScoredThisHalf) {
+                        currentState.runnersScoredThisHalf = currentState.runnersScoredThisHalf.filter(p => p !== forcedOutPlayer);
+                    }
+                    if (currentState.rbiThisHalf) {
+                        currentState.rbiThisHalf = currentState.rbiThisHalf.filter(p => p !== forcedOutPlayer);
+                    }
+                }
+
                 defCode = isFPO ? 'FPO' : 'DPO';
-            } else {
-                // Normal putout
+                advanceBatterFlag = true;
+            }
+            else if (defDart === 'Blue' || defDart === 'Yellow') {
                 currentState.outs++;
+                advanceBatterFlag = true;
+                currentState.currentBalls[currentState.batterIndex] = 0;
+                currentState.currentStrikes[currentState.batterIndex] = 0;
                 defCode = 'SPO';
+                currentState.plays.push({ inning: currentState.inning, team: batTeam, player: batter, playType: 'SKO', timestamp: Date.now() });
             }
-            advanceBatterFlag = true;
-            currentState.currentBalls[currentState.batterIndex] = 0;
-            currentState.currentStrikes[currentState.batterIndex] = 0;
-
-            // Only record SKO if batter actually had 2 strikes before defender hit
-            if ((currentState.currentStrikes[currentState.batterIndex] || 0) >= 2) {
-                currentState.plays.push({
-                    inning: currentState.inning,
-                    team: batTeam,
-                    player: batter,
-                    playType: 'SKO',
-                    timestamp: Date.now()
-                });
-            }
-        }
-
-        // === DEFENDER MISS → ERROR + STRIKE ON BATTER (except don't double-count in FPO) ===
-        else if (defDart === 'Miss') {
+            else if (defDart === 'Miss') {
                 if (isFPO) {
                     currentState.outs++;
                     advanceBatterFlag = true;
@@ -1550,15 +1400,15 @@ else if (play === 'Blue' || play === 'Yellow') {
             }
         }
 
-        // ————— RECORD THE DEFENDER PLAY —————
+        // Record defender play
         currentState.plays.push({
             inning: currentState.inning,
             team: batTeam,
             player: batter,
             defender: defender,
             playType: currentState.batterDart,
-            defenderPlayType: defCode || undefined,
-            note: (isFPO && defDart === 'Yellow' && canDoubleOut) ? 'Force Double Play' : undefined,
+            defenderPlayType: defCode,
+            note: isFPO && defDart === 'Yellow' ? 'Force Double Play' : undefined,
             timestamp: Date.now()
         });
 
@@ -1567,72 +1417,37 @@ else if (play === 'Blue' || play === 'Yellow') {
         currentState.pendingFPO = false;
         currentState.batterDart = null;
     }
+
     // ——————————————————————— RBI / SCORING DISPLAY ———————————————————————
-        // ——————————————————————— SCORING DISPLAY — FIXED VERSION ———————————————————————
-    if (runsScored > 0 || play === 'HR' || play === 'BB') {
+    if (runsScored > 0 || ['HR','BB'].includes(play)) {
         if (!currentState.runnersScoredThisHalf) currentState.runnersScoredThisHalf = [];
         if (!currentState.rbiThisHalf) currentState.rbiThisHalf = [];
 
-        // === 1. Determine who actually crossed home on THIS PLAY ===
-        const scorersThisPlay = [];
-
-        // Home Run: everyone on base + batter scores
+        const scorers = [];
         if (play === 'HR') {
-            if (oldBases.first.occupied)  scorersThisPlay.push(oldBases.first.player);
-            if (oldBases.second.occupied) scorersThisPlay.push(oldBases.second.player);
-            if (oldBases.third.occupied)  scorersThisPlay.push(oldBases.third.player);
-            scorersThisPlay.push(batter); // batter scores last
+            if (oldBases.first.occupied) scorers.push(oldBases.first.player);
+            if (oldBases.second.occupied) scorers.push(oldBases.second.player);
+            if (oldBases.third.occupied) scorers.push(oldBases.third.player);
+            scorers.push(batter);
         }
-        // Walk/Balk with bases loaded → runner from 3B scores
-        else if (play === 'BB' && oldBases.third.occupied) {
-            scorersThisPlay.push(oldBases.third.player);
+        else if (['2nd','3rd','H&R'].includes(play)) {
+            if (oldBases.third.occupied) scorers.push(oldBases.third.player);
+            if ((play === '2nd' || play === 'H&R') && oldBases.second.occupied) scorers.push(oldBases.second.player);
+            if (play === '3rd' && oldBases.first.occupied && oldBases.second.occupied) scorers.push(oldBases.second.player);
         }
-        // Regular hit: push runners from farthest to closest
-        else if (['1st', '2nd', '3rd', 'H&R'].includes(play)) {
-            const basesHit = play === '1st' ? 1 : play === '2nd' || play === 'H&R' ? 2 : 3;
+        else if (play === '1st' && oldBases.third.occupied) scorers.push(oldBases.third.player);
+        else if (play === 'BB' && oldBases.third.occupied) scorers.push(oldBases.third.player);
 
-            // Always check 3rd → home first
-            if (oldBases.third.occupied && basesHit >= 1) scorersThisPlay.push(oldBases.third.player);
-            if (oldBases.second.occupied && basesHit >= 2) scorersThisPlay.push(oldBases.second.player);
-            if (oldBases.first.occupied  && basesHit >= 3) scorersThisPlay.push(oldBases.first.player);
-        }
+        scorers.forEach(p => { if (p && !currentState.runnersScoredThisHalf.includes(p)) currentState.runnersScoredThisHalf.push(p); });
 
-        // === 2. Add them to the half-inning list (preserve order) ===
-        scorersThisPlay.forEach(p => {
-            if (p && !currentState.runnersScoredThisHalf.includes(p)) {
-                currentState.runnersScoredThisHalf.push(p);
-            }
-        });
-
-        // === 3. Credit RBI to batter (except unearned on BB) ===
-        if (runsScored > 0 && ['1st','2nd','3rd','HR','H&R'].includes(play)) {
-            if (!currentState.rbiThisHalf.includes(batter)) {
-                currentState.rbiThisHalf.push(batter);
-            }
+        if ((runsScored > 0 && ['1st','2nd','3rd','HR','H&R'].includes(play)) || (play === 'BB' && oldBases.third.occupied)) {
+            if (!currentState.rbiThisHalf.includes(batter)) currentState.rbiThisHalf.push(batter);
         }
 
-        // === 4. Update the two on-screen lines ===
-        const hrHittersThisInning = currentState.plays
-            .filter(p => p.playType === '4' && p.inning === currentState.inning && p.team === batTeam)
-            .map(p => p.player);
-
-        const formatNames = (arr) => {
-            if (!arr || arr.length === 0) return '—';
-            return arr
-                .map(name => hrHittersThisInning.includes(name)
-                    ? `<span class="hr">(${name})</span>`
-                    : escapeHtml(name)
-                )
-                .join(' - ');
-        };
-
-        document.getElementById('runners-scored').innerHTML = formatNames(currentState.runnersScoredThisHalf);
-        document.getElementById('rbi-credit').innerHTML     = formatNames(currentState.rbiThisHalf);
-
-        // Light up home plate if anyone scored this half-inning
-        if (currentState.halfInningRuns > 0) {
-            document.getElementById('home-plate').classList.add('has-runs');
-        }
+        const hrHitters = currentState.plays.filter(p => p.playType === '4' && p.inning === currentState.inning && p.team === batTeam).map(p => p.player);
+        const format = arr => arr.length ? arr.map(n => hrHitters.includes(n) ? `<span class="hr">(${n})</span>` : n).join(' - ') : '—';
+        document.getElementById('runners-scored').innerHTML = format(currentState.runnersScoredThisHalf);
+        document.getElementById('rbi-credit').innerHTML = format(currentState.rbiThisHalf);
     }
 
         // ——————————————————————— FINAL CLEANUP ———————————————————————
@@ -1718,6 +1533,7 @@ else if (play === 'Blue' || play === 'Yellow') {
     currentState.currentBalls[currentState.batterIndex] = 0;
     currentState.currentStrikes[currentState.batterIndex] = 0;
 }
+
     function nextBatter() { saveState(); advanceBatter(); pendingPlay = null; updateDisplay(); }
     function prevBatter() {
         saveState();
@@ -2011,8 +1827,7 @@ function calculateTeamStats() {
         if (p.defenderPlayType) {
             const defTeam = team === 'A' ? 'B' : 'A';
             stats[defTeam].defAttempts++;
-           if (['SPO','DPO','FPO'].includes(p.defenderPlayType)) {
-    stats[defTeam].putouts += (p.defenderPlayType === 'FPO' || p.defenderPlayType === 'DPO') ? 1 : 1;}
+            if (['SPO','DPO'].includes(p.defenderPlayType)) stats[defTeam].putouts += (p.defenderPlayType === 'DPO' ? 2 : 1);
             if (p.defenderPlayType === 'E') stats[defTeam].errors++;
         }
 
@@ -2058,14 +1873,6 @@ function calculateTeamStats() {
     } else {
         hrEl.innerHTML = allHR.map((name, i) => `${i+1}. ${escapeHtml(name)}`).join('<br>');
     }
-    Then call pushLiveState() at the end of updateDisplay() (you already call updateDisplay() everywhere):js
-
-
-
-    pushLiveState();          // ← ADD THIS LINE
-    calculateTeamStats();
-}
-
 }
 </script>
 </body>
