@@ -1529,27 +1529,24 @@ else if (play === 'Blue' || play === 'Yellow') {
 
         // === DEFENDER MISS → ERROR + STRIKE ON BATTER (except don't double-count in FPO) ===
         else if (defDart === 'Miss') {
-            if (!isFPO) {
-                currentState.currentStrikes[currentState.batterIndex] = 
-                    (currentState.currentStrikes[currentState.batterIndex] || 0) + 1;
-            }
-
-            if (currentState.currentStrikes[currentState.batterIndex] >= 3) {
-                currentState.outs++;
-                advanceBatterFlag = true;
-                currentState.currentBalls[currentState.batterIndex] = 0;
-                currentState.currentStrikes[currentState.batterIndex] = 0;
-                defCode = 'SKO';
-
-                currentState.plays.push({
-                    inning: currentState.inning,
-                    team: batTeam,
-                    player: batter,
-                    playType: 'SKO',
-                    timestamp: Date.now()
-                });
-            } else {
-                defCode = 'E';  // Defender error, no out
+                if (isFPO) {
+                    currentState.outs++;
+                    advanceBatterFlag = true;
+                    currentState.currentBalls[currentState.batterIndex] = 0;
+                    currentState.currentStrikes[currentState.batterIndex] = 0;
+                    defCode = 'SKO';
+                    currentState.plays.push({ inning: currentState.inning, team: batTeam, player: batter, playType: 'SKO', timestamp: Date.now() });
+                } else {
+                    currentState.currentStrikes[currentState.batterIndex]++;
+                    defCode = (strikesBefore + 1 >= 3) ? 'SKO' : 'E';
+                    if (strikesBefore + 1 >= 3) {
+                        currentState.outs++;
+                        advanceBatterFlag = true;
+                        currentState.currentBalls[currentState.batterIndex] = 0;
+                        currentState.currentStrikes[currentState.batterIndex] = 0;
+                        currentState.plays.push({ inning: currentState.inning, team: batTeam, player: batter, playType: 'SKO', timestamp: Date.now() });
+                    }
+                }
             }
         }
 
@@ -1721,7 +1718,6 @@ else if (play === 'Blue' || play === 'Yellow') {
     currentState.currentBalls[currentState.batterIndex] = 0;
     currentState.currentStrikes[currentState.batterIndex] = 0;
 }
-
     function nextBatter() { saveState(); advanceBatter(); pendingPlay = null; updateDisplay(); }
     function prevBatter() {
         saveState();
