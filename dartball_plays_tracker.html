@@ -62,6 +62,7 @@
     </div>
 
     <div class="nav">
+          <a href="Index.html">Home</a> |
         <a href="dartball_game_tracker.html">Scorekeeper</a> |
         <a href="scoresheet.html">Team Scoresheet</a> |
         <a href="player_stats.html">Player Stats</a>
@@ -168,7 +169,7 @@
         const styles = {
             '1':'hit','2':'hit','3':'hit','4':'hit','5':'hit',
             'BB':'bb','O':'out','SPO':'spo','DPO':'dpo','E':'error',
-            'SKO':'out','SKOY':'out','SPOY':'spo'
+            'SKO':'out','SKOY':'out','SPOY':'spo','FPO':'fpo'
         };
         const cls = styles[code] || 'out';
         return `<span class="code ${cls}">${code}</span>`;
