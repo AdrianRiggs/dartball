@@ -9,7 +9,7 @@ const THEMEABLE_PAGES = [
   "scoresheet.html",
   "players_stats.html",
   "dartball_roster.html",
-  "popup-panel.html"
+
 ];
 
 const currentPage = location.pathname.split("/").pop() || "index.html";
