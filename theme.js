@@ -284,18 +284,24 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`"${name}" saved!`);
   });
 
-  // 5. Sync color pickers when panel opens
-  document.querySelector('button[onclick*="themePanel"]')?.addEventListener('click', () => {
-    setTimeout(() => {
-      const c = getStyles(localStorage.getItem('dartball_projector_theme') || 'light');
-      ['liveBg','liveText','liveChartBg','liveChartText','liveDefender'].forEach(id => {
-        document.getElementById(id).value = c[id.replace('live','').toLowerCase()];
-      });
-      updateThemePanelAppearance();
-      renderSavedThemes();
-    }, 150);
-  });
+  // 5. Sync color pickers when panel opens — NOW FIXED FOR CHART TEXT
+document.querySelector('button[onclick*="themePanel"]')?.addEventListener('click', () => {
+  setTimeout(() => {
+    const current = getStyles(localStorage.getItem('dartball_projector_theme') || 'light');
+
+    document.getElementById('liveBg').value        = current.bg;
+    document.getElementById('liveText').value      = current.text;
+    document.getElementById('liveChartBg').value   = current.chartBg;
+    document.getElementById('liveChartText').value = current.chartText;  // ← This was broken before
+    document.getElementById('liveDefender').value  = current.defender;
+
+    updateThemePanelAppearance();
+    renderSavedThemes();
+  }, 150);
 });
+
+});
+
 
 // Page load — apply saved theme
 window.addEventListener('load', () => {
